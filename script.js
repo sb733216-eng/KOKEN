@@ -263,6 +263,35 @@ const IL_ILCE = {
     render();
   }
 
+
+  /* ---------- Kart üzeri durumsal adet butonu ---------- */
+  const cartQty = (id) => { const i = cart.find((x) => x.id === id); return i ? i.qty : 0; };
+
+  function addControlHTML(id) {
+    const q = cartQty(id), e = esc(id);
+    return q > 0
+      ? `<div class="qty-control" data-ctl="${e}"><button type="button" data-dec="${e}" aria-label="Adedi azalt">−</button><span aria-live="polite">${q}</span><button type="button" data-inc="${e}" aria-label="Adedi arttır">+</button></div>`
+      : `<button type="button" class="btn btn--primary" data-add="${e}" data-ctl="${e}">Sepete Ekle</button>`;
+  }
+
+  // Sepet her değiştiğinde ana sayfadaki kart butonlarını anlık eşitler
+  function syncCardControls() {
+    $$('#grid [data-ctl]').forEach((el) => {
+      const id = el.dataset.ctl, q = cartQty(id);
+      const isQty = el.classList.contains('qty-control');
+      if (q > 0 && isQty) { el.querySelector('span').textContent = q; return; }
+      if ((q > 0) === isQty) return;
+      const hadFocus = el.contains(document.activeElement);
+      el.outerHTML = addControlHTML(id);
+      if (hadFocus) {
+        const n = $$('#grid [data-ctl]').find((x) => x.dataset.ctl === id);
+        if (n) (n.querySelector('[data-inc]') || n).focus();
+      }
+    });
+  }
+
+
+
   /* ---------- Vitrin ---------- */
   function cardHTML(p) {
     const id = esc(p.id);
@@ -281,7 +310,7 @@ const IL_ILCE = {
           <span class="price">${fmt(p.price)}</span>
           <div class="card__actions">
             <button type="button" class="btn btn--ghost" data-view="${id}">İncele</button>
-            <button type="button" class="btn btn--primary" data-add="${id}">Sepete Ekle</button>
+                        ${addControlHTML(p.id)}
           </div>
         </div>
       </div>
@@ -301,9 +330,13 @@ const IL_ILCE = {
     renderGrid();
   });
 
-  $('#grid').addEventListener('click', (e) => {
+    $('#grid').addEventListener('click', (e) => {
     const add = e.target.closest('[data-add]');
-    if (add) { addToCart(add.dataset.add, 1); flash(add); return; }
+    if (add) { addToCart(add.dataset.add, 1, true); showToast(add.dataset.add); return; }
+    const inc = e.target.closest('[data-inc]');
+    if (inc) { addToCart(inc.dataset.inc, 1, true); showToast(inc.dataset.inc); return; }
+    const dec = e.target.closest('[data-dec]');
+    if (dec) { changeCartQty(dec.dataset.dec, -1); return; }
     const v = e.target.closest('[data-view]');
     if (v) openDetail(v.dataset.view);
   });
@@ -315,15 +348,66 @@ const IL_ILCE = {
     setTimeout(() => { btn.textContent = t; btn.classList.remove('added'); }, 900);
   }
 
+  /* ---------- Sepete Ekle Toast ---------- */
+  let _toastTimer = null;
+  const toastEl       = () => $('#cartToast');
+  const toastNameEl   = () => $('#toastName');
+
+  function showToast(productId) {
+    const el = toastEl();
+    if (!el) return;
+    const p = byId.get(productId);
+    const nameEl = toastNameEl();
+    if (nameEl) nameEl.textContent = p ? label(p) : '';
+
+    // Önceki timer'ı sıfırla
+    clearTimeout(_toastTimer);
+    el.classList.remove('show');
+    void el.offsetWidth; // reflow — animasyonu yeniden başlat
+    el.classList.add('show');
+
+    _toastTimer = setTimeout(hideToast, 3000);
+  }
+
+  function hideToast() {
+    clearTimeout(_toastTimer);
+    const el = toastEl();
+    if (el) el.classList.remove('show');
+  }
+
+  // Hover'da timer dursun, mouse çekince devam etsin
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = toastEl();
+    if (!el) return;
+    el.addEventListener('mouseenter', () => clearTimeout(_toastTimer));
+    el.addEventListener('mouseleave', () => { _toastTimer = setTimeout(hideToast, 1500); });
+  });
+
+  // "Sepete Git" butonu
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#toastGoCart')) { hideToast(); openDrawer(); }
+    if (e.target.closest('#toastContinue')) { hideToast(); }
+  });
+
   /* ---------- Sepet ---------- */
-  function addToCart(id, n) {
+   // quiet = true: kart üzerindeki butonlar sepet çekmecesini açmaz (detay modalı açar)
+  function addToCart(id, n, quiet) {
     if (!byId.has(id)) return;
     const f = cart.find((i) => i.id === id);
     if (f) f.qty = Math.min(MAX_QTY, f.qty + n); else cart.push({ id, qty: Math.min(MAX_QTY, n) });
     commit();
     const c = $('#openCart');
     c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
-    openDrawer();
+    if (!quiet) openDrawer();
+  }
+
+  // Adet 1 iken azaltılırsa ürün sepetten silinir (kart butonu "Sepete Ekle"ye döner)
+  function changeCartQty(id, delta) {
+    const it = cart.find((i) => i.id === id);
+    if (!it) return;
+    it.qty = Math.min(MAX_QTY, it.qty + delta);
+    if (it.qty <= 0) cart = cart.filter((i) => i !== it);
+    commit();
   }
 
   function render() {
@@ -364,6 +448,26 @@ const IL_ILCE = {
     badge.textContent = count();
     badge.classList.toggle('on', count() > 0);
     $('#checkoutBtn').disabled = !ls.length;
+
+    
+    // Tepe kargo bandı (progress-bar)
+    const banner   = $('#topShippingBanner');
+    const bannerMsg  = $('#bannerMsg');
+    const bannerFill = $('#bannerFill');
+    if (banner && bannerMsg && bannerFill) {
+      const pctBanner = Math.min(100, Math.round((sub / FREE_SHIPPING_LIMIT) * 100));
+      bannerFill.style.width = pctBanner + '%';
+      banner.classList.toggle('free', sub >= FREE_SHIPPING_LIMIT);
+      if (sub === 0) {
+        bannerMsg.textContent = `${FREE_SHIPPING_LIMIT} TL ve Üzeri Siparişlerde Kargo Ücretsiz! | Doğrudan Üreticiden Taze Karadeniz Fındığı`;
+      } else if (sub < FREE_SHIPPING_LIMIT) {
+        bannerMsg.textContent = `🎯 Kargo Bedava İçin Son ${Math.ceil(FREE_SHIPPING_LIMIT - sub)} TL! (%${pctBanner} tamamlandı)`;
+      } else {
+        bannerMsg.textContent = `🎉 Tebrikler! Siparişinizde Kargo Ücretsiz!`;
+      }
+    }
+
+    syncCardControls();
   }
 
   const commit = () => { save(); render(); };
@@ -677,17 +781,7 @@ const IL_ILCE = {
   form.addEventListener('input', (e) => e.target.classList.remove('bad'));
 
   
-  // Yüzen WhatsApp adası
-  const waIsland = $('#waIsland');
-  const waValid = /^\d{10,15}$/.test(WHATSAPP_NO);
-  if (waValid) {
-    waIsland.href = `https://wa.me/${WHATSAPP_NO}?text=${encodeURIComponent('Merhaba, Köken Fındık ürünleri hakkında bilgi almak istiyorum.')}`;
-  } else {
-    waIsland.addEventListener('click', (e) => {
-      e.preventDefault();
-      alert('WhatsApp hattı henüz tanımlı değil. script.js içindeki WHATSAPP_NO değerini girin.');
-    });
-  }
+
   
   $('#grid').innerHTML = '<p class="grid__msg">Ürünler yükleniyor…</p>';
   render();
