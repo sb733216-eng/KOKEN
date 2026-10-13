@@ -330,17 +330,3 @@ body:has(.drawer.on) .wa-island{right:calc(min(420px,100%) + 1.2rem)}
   .sub-header .brand__slogan{display:none}
   .back-link{padding:.45rem .75rem;font-size:.85rem}
 }
-
-/* ===== Global: yüzen WhatsApp butonu (tüm sayfalar) ===== */
-.wa-float{position:fixed;bottom:20px;right:20px;z-index:1000;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s,opacity .2s}
-.wa-float:hover{transform:scale(1.08);box-shadow:0 10px 24px rgba(0,0,0,.32)}
-.wa-float svg{width:30px;height:30px;fill:currentColor}
-/* Sepet/modal açıkken butonların üstünü kapatmasın (ana sayfa) */
-body.no-scroll .wa-float{opacity:0;pointer-events:none}
-@media (max-width:768px){.wa-float{bottom:80px}}
-
-/* ===== Kart üzeri durumsal adet butonu ===== */
-.qty-control{display:flex;align-items:center;justify-content:space-between;gap:.2rem;min-height:44px;padding:.2rem;background:var(--green);color:var(--white);border-radius:999px}
-.qty-control button{flex:none;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:var(--white);font-size:1.15rem;font-weight:700;line-height:1;transition:background .2s}
-.qty-control button:hover{background:rgba(255,255,255,.32)}
-.qty-control span{flex:1;text-align:center;font-weight:700;font-size:.95rem}
