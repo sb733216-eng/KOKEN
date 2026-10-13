@@ -23,17 +23,9 @@ button{font-family:inherit;cursor:pointer}
 .btn:disabled{background:#c9d3ca;cursor:not-allowed;transform:none}
 .btn.added{background:var(--brown)}
 
-/* ===== Sticky progress-bar banner ===== */
-.site-top{position:sticky;top:0;z-index:50}
-.ship-banner{background:#1c5a27;color:var(--white);font-size:.82rem;font-weight:500;overflow:hidden;position:relative}
-.ship-banner__track{height:8px;background:rgba(255,255,255,.15);border-radius:999px;margin:0 1rem .5rem;position:relative;overflow:hidden}
-.ship-banner__fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,#4ade80,#22c55e,#86efac);border-radius:999px;transition:width .6s cubic-bezier(.4,0,.2,1);will-change:width}
-.ship-banner__fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.4) 50%,transparent 100%);animation:shimmer 1.8s infinite;border-radius:inherit}
-@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
-.ship-banner__text{display:flex;align-items:center;justify-content:center;gap:.55rem;padding:.45rem 1rem;line-height:1.2;text-align:center;min-height:32px}
-.ship-banner__icon{flex:none;font-size:1rem;line-height:1}
-.ship-banner.free .ship-banner__fill{background:linear-gradient(90deg,#86efac,#4ade80)}
-.header{background:rgba(249,248,246,.95);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.announce{background:#1c5a27;color:var(--white);text-align:center;font-size:.85rem;font-weight:500;padding:.55rem 1rem}
+
+.header{position:sticky;top:0;z-index:50;background:rgba(249,248,246,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .header__inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:70px}
 .brand{display:flex;align-items:center;gap:.65rem;font-family:var(--head);font-size:1.35rem;font-weight:700;color:var(--green);white-space:nowrap}
 .brand img{width:42px;height:42px;object-fit:contain;border-radius:50%}
@@ -157,7 +149,8 @@ button{font-family:inherit;cursor:pointer}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 
 /* ===== Güncelleme: header, hero, kartlar, select ===== */
-html{scroll-padding-top:110px}
+html{scroll-padding-top:140px}
+.header{background:rgba(249,248,246,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .header__inner{align-items:center;flex-wrap:nowrap;padding:0;min-height:72px}
 .brand{align-items:center;line-height:1}
 .brand img{width:44px;height:44px;object-fit:cover;border-radius:50%;background:var(--white)}
@@ -351,13 +344,3 @@ body.no-scroll .wa-float{opacity:0;pointer-events:none}
 .qty-control button{flex:none;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:var(--white);font-size:1.15rem;font-weight:700;line-height:1;transition:background .2s}
 .qty-control button:hover{background:rgba(255,255,255,.32)}
 .qty-control span{flex:1;text-align:center;font-weight:700;font-size:.95rem}
-
-/* ===== Sepete ekle toast bildirimi ===== */
-.cart-toast{position:fixed;left:1rem;bottom:90px;z-index:999;width:min(340px,calc(100vw - 2rem));background:var(--white);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.7rem;transform:translateY(120%);opacity:0;transition:transform .35s cubic-bezier(.22,.8,.3,1),opacity .3s;pointer-events:none}
-.cart-toast.show{transform:none;opacity:1;pointer-events:auto}
-.cart-toast__head{display:flex;align-items:center;gap:.6rem;font-size:.9rem;font-weight:600;color:var(--text)}
-.cart-toast__check{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--green);color:var(--white);font-size:.85rem}
-.cart-toast__name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-weight:400;font-size:.82rem;margin-top:.05rem}
-.cart-toast__actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
-.cart-toast__actions .btn{font-size:.88rem;padding:.55rem .4rem}
-@media(max-width:768px){.cart-toast{bottom:100px}}
