@@ -62,11 +62,59 @@
 </main>
 
 <footer class="footer">
-  <div class="container footer__inner">
-    <div><h4>Köken Fındık</h4><p>Kırma, Kavurma, Ezme, Paketleme</p></div>
-    <div><h4>İletişim</h4><p>0 (000) 000 00 00</p><p>info@kokenfindik.com</p></div>
+ <section class="assure" aria-label="Güvencelerimiz">
+  <div class="container assure__inner">
+    <div class="assure__item">
+      <span class="assure__ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span>
+      <div><strong>Orijinal Üretici</strong><small>Doğrudan üreticiden, aracısız</small></div>
+    </div>
+    <div class="assure__item">
+      <span class="assure__ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+      <div><strong>Hızlı Kargo</strong><small>Siparişiniz hızla kargoya verilir</small></div>
+    </div>
+    <div class="assure__item">
+      <span class="assure__ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+      <div><strong>Güvenli Paketleme</strong><small>Hava almayan, hijyenik ambalaj</small></div>
+    </div>
   </div>
-  <div class="footer__copy">© 2026 Köken Fındık. Tüm hakları saklıdır.</div>
+</section>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div>
+      <h4>Kurumsal</h4>
+      <ul>
+        <li><a href="#" data-legal="hakkimizda">Hakkımızda</a></li>
+        <li><a href="#" data-legal="tesis">Üretim Tesisimiz</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Müşteri Hizmetleri</h4>
+      <ul>
+        <li><a href="#" data-legal="takip">Sipariş Takibi</a></li>
+        <li><a href="#" data-legal="teslimat">Teslimat ve Kargo</a></li>
+        <li><a href="#" data-legal="iade">İptal ve İade</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Yasal Bilgiler</h4>
+      <ul>
+        <li><a href="#" data-legal="kvkk">KVKK Aydınlatma Metni</a></li>
+        <li><a href="#" data-legal="satis">Mesafeli Satış Sözleşmesi</a></li>
+        <li><a href="#" data-legal="gizlilik">Gizlilik ve Çerez Politikası</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>İletişim</h4>
+      <address>
+        <p>Adres: [Mahalle, Sokak No, İlçe / İl]</p>
+        <p>Telefon: 0 (000) 000 00 00</p>
+        <p>WhatsApp Hattı: <a id="fWa" href="#">WhatsApp ile yazın</a></p>
+      </address>
+    </div>
+  </div>
+  <div class="footer__copy">© 2026 Köken Fındık · Kırma, Kavurma, Ezme, Paketleme. Tüm hakları saklıdır.</div>
+</footer>
 </footer>
 
 <!-- SEPET -->
@@ -127,6 +175,49 @@
       <p class="ok__fb">WhatsApp açılmadıysa <a id="waFallback" href="#" target="_blank" rel="noopener">buraya tıklayın</a>.</p>
       <button type="button" class="btn btn--primary btn--block" data-close>Alışverişe devam et</button>
     </div>
+  </div>
+</div>
+
+<!-- ÜRÜN DETAY -->
+<div class="modal" id="detail" aria-hidden="true">
+  <div class="modal__bg" data-close></div>
+  <div class="modal__box modal__box--xl" role="dialog" aria-modal="true" aria-labelledby="dName">
+    <button type="button" class="x x--float" data-close aria-label="Kapat">&times;</button>
+    <div class="detail">
+      <div class="detail__media">
+        <img id="dImg" alt="" width="640" height="640">
+        <span class="chip" id="dChip"></span>
+      </div>
+      <div class="detail__info">
+        <h3 id="dName"></h3>
+        <p class="detail__price" id="dPrice"></p>
+		        <ul class="badges" aria-label="Ürün özellikleri"><li>Glutensiz</li><li>Katkısız</li><li>%100 Doğal</li></ul>
+        <p class="detail__desc" id="dDesc"></p>
+        <section class="detail__sec" id="dIngSec"><h4>İçindekiler</h4><p id="dIng"></p></section>
+                <dl class="info">
+          <div><dt>Saklama Koşulları</dt><dd>Serin, kuru yerde 18-25°C'de muhafaza ediniz.</dd></div>
+          <div><dt>Raf Ömrü</dt><dd>Tazeliğini 12 ay korur.</dd></div>
+          <div><dt>Alerjen Uyarısı</dt><dd>Fındık içerir.</dd></div>
+        </dl>
+        <div class="detail__buy">
+          <div class="qty qty--lg">
+            <button type="button" id="dMinus" aria-label="Adedi azalt">−</button>
+            <span id="dQty" aria-live="polite">1</span>
+            <button type="button" id="dPlus" aria-label="Adedi arttır">+</button>
+          </div>
+          <button type="button" class="btn btn--primary btn--lg" id="dAdd">Sepete Ekle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- YASAL METİNLER -->
+<div class="modal" id="legal" aria-hidden="true">
+  <div class="modal__bg" data-close></div>
+  <div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <div class="drawer__head"><h3 id="legalTitle"></h3><button type="button" class="x" data-close aria-label="Kapat">&times;</button></div>
+    <div class="modal__body legal" id="legalBody"></div>
   </div>
 </div>
 

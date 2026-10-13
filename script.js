@@ -1,17 +1,31 @@
 /* ===================== AYARLAR (kolayca değiştirilebilir) ===================== */
+// Google E-Tablolar: Dosya > Paylaş > Web'de yayınla > Sayfa seçin, biçim "CSV" > Yayınla > linki buraya yapıştırın.
+// Boş bırakılırsa veya veri çekilemezse aşağıdaki yedek (FALLBACK_PRODUCTS) ürünler gösterilir.
+const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ27fgneO23qLFmXw-XCes8of-EJCWA4Ut-71crc_hwzfBnOFUw-Fe6t3-ejSJskTjrobP5kDo_5meN/pub?output=csv";
 const WHATSAPP_NO = "905313385955"; // Ülke koduyla, + ve boşluk olmadan. Örn: 905321234567
-const FREE_SHIPPING_LIMIT = 750;    // Bu tutar ve üzerinde kargo ücretsiz (TL)
-const SHIPPING_FEE = 60;            // Limit altındaki siparişlerde kargo ücreti (TL)
+const FREE_SHIPPING_LIMIT = 750;     // Bu tutar ve üzerinde kargo ücretsiz (TL)
+const SHIPPING_FEE = 60;             // Limit altındaki siparişlerde kargo ücreti (TL)
 
-// Ürünleri ve fiyatları buradan değiştirebilirsiniz.
-// cat: kavrulmus | cig | ezme | paketleme
-const PRODUCTS = [
-  { id: '1', cat: 'kavrulmus', name: 'Taze Kavrulmuş İç Fındık',          weight: '500g', price: 250, img: 'kavrulmus.jpg' },
-  { id: '3', cat: 'kavrulmus', name: 'Çifte Kavrulmuş Fındık',            weight: '1 kg', price: 480, img: 'cifte-kavrulmus.jpg' },
-  { id: '2', cat: 'ezme',      name: 'Şekersiz Doğal Fındık Ezmesi',      weight: '320g', chip: '320g Cam Kavanoz', price: 190, img: 'ezme.jpg' },
-  { id: '4', cat: 'cig',       name: 'Çiğ İç Fındık',                     weight: '500g', price: 230, img: 'cig.jpg' },
-  { id: '5', cat: 'paketleme', name: 'Vakumlu Paket Lüks Karışık Fındık', weight: '1 kg', price: 520, img: 'paket.jpg' }
+// Yedek ürünler. cat: kavrulmus | cig | ezme | paketleme
+// Açıklama ve içindekiler ÖRNEK metindir; kendi ürün etiketinize göre değiştirin.
+const FALLBACK_PRODUCTS = [
+  { id: '1', cat: 'kavrulmus', name: 'Taze Kavrulmuş İç Fındık', weight: '500g', chip: '', price: 250, img: 'kavrulmus.jpg',
+    desc: 'Karadeniz fındığının kırılıp kendi tesisimizde taze kavrulmuş iç hali. Doğal tadı ve çıtırlığıyla atıştırmalık, kahvaltı ve tatlı tarifleri için uygundur.',
+    ing: 'Fındık içi.' },
+  { id: '3', cat: 'kavrulmus', name: 'Çifte Kavrulmuş Fındık', weight: '1 kg', chip: '', price: 480, img: 'cifte-kavrulmus.jpg',
+    desc: 'İki aşamalı kavurma ile daha derin aroma ve belirgin çıtırlık. Kahve yanında ya da pastacılıkta kullanıma uygundur.',
+    ing: 'Fındık içi.' },
+  { id: '2', cat: 'ezme', name: 'Şekersiz Doğal Fındık Ezmesi', weight: '320g', chip: '320g Cam Kavanoz', price: 190, img: 'ezme.jpg',
+    desc: 'Şeker eklenmeden öğütülen doğal fındık ezmesi, 320 g cam kavanozda. Ekmek, kahvaltı ve tatlı tariflerinde kullanılabilir.',
+    ing: 'Kavrulmuş fındık. Şeker eklenmemiştir.' },
+  { id: '4', cat: 'cig', name: 'Çiğ İç Fındık', weight: '500g', chip: '', price: 230, img: 'cig.jpg',
+    desc: 'Kavrulmamış, çiğ iç fındık. Kendi kavurma tercihinize, granola ve tatlı tariflerine uygundur.',
+    ing: 'Çiğ fındık içi.' },
+  { id: '5', cat: 'paketleme', name: 'Vakumlu Paket Lüks Karışık Fındık', weight: '1 kg', chip: '', price: 520, img: 'paket.jpg',
+    desc: 'Taze kalması için vakumlu paketlenmiş lüks karışık fındık, 1 kg. Hediye ve toplu tüketim için uygundur.',
+    ing: 'Fındık içi.' }
 ];
+
 // 81 il ve tüm ilçeleri (il adı -> virgülle ayrılmış ilçeler)
 const IL_ILCE = {
   'Adana': 'Aladağ,Ceyhan,Çukurova,Feke,İmamoğlu,Karaisalı,Karataş,Kozan,Pozantı,Saimbeyli,Sarıçam,Seyhan,Tufanbeyli,Yumurtalık,Yüreğir',
@@ -108,14 +122,90 @@ const IL_ILCE = {
 
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
-  const fmt = (n) => n.toLocaleString('tr-TR') + ' TL';
+  const money = (n) => Math.round(n * 100) / 100;
+  const fmt = (n) => money(n).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL';
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* @pure-start */
+  const slug = (s) => String(s || '').toLocaleLowerCase('tr')
+    .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
+    .replace(/[^a-z0-9]/g, '');
+  const safeImg = (s) => (/^(https?:\/\/\S+|[^\s:"'<>]+)$/i.test(s) ? s : '');
+
+  // Sheet sütun başlığı -> dahili alan (Türkçe/İngilizce, büyük-küçük harf ve boşluk fark etmez)
+  const ALIAS = {
+    id: ['id', 'kod', 'urunid'], cat: ['kategori', 'category', 'cat'],
+    name: ['ad', 'urun', 'urunadi', 'isim', 'name'], weight: ['gramaj', 'agirlik', 'weight'],
+    chip: ['rozet', 'etiket', 'chip'], price: ['fiyat', 'price', 'tutar'],
+    img: ['resim', 'gorsel', 'foto', 'image', 'img'], desc: ['aciklama', 'description', 'detay'],
+    ing: ['icindekiler', 'icerik', 'ingredients'],
+    active: ['aktif', 'yayinda', 'active']
+  };
+
+  function parseCSV(text) {
+    const rows = [];
+    let row = [], cur = '', q = false;
+    text = String(text).replace(/^\uFEFF/, '');
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+        else cur += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { row.push(cur); cur = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(cur); cur = ''; rows.push(row); row = [];
+      } else cur += c;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter((r) => r.some((c) => c.trim() !== ''));
+  }
+
+  function parsePrice(v) {
+    let s = String(v || '').replace(/[^\d.,]/g, '');
+    if (!s) return NaN;
+    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    return Number(s);
+  }
+
+  function sheetToProducts(text) {
+    const rows = parseCSV(text);
+    if (rows.length < 2) return [];
+    const cols = {};
+    rows[0].forEach((h, i) => {
+      const k = slug(h);
+      for (const f in ALIAS) if (ALIAS[f].includes(k) && !(f in cols)) cols[f] = i;
+    });
+    if (!('name' in cols) || !('price' in cols)) return [];
+    const seen = new Set(), out = [];
+    rows.slice(1).forEach((r, n) => {
+      const g = (f) => (f in cols ? String(r[cols[f]] || '').trim() : '');
+      if (['hayir', '0', 'false', 'pasif', 'no'].includes(slug(g('active')))) return;
+      const name = g('name'), price = parsePrice(g('price'));
+      if (!name || !(price > 0)) return;
+      const id = g('id') || slug(name) || String(n + 1);
+      if (seen.has(id)) return;
+      seen.add(id);
+      out.push({ id, cat: slug(g('cat')), name, weight: g('weight'), chip: g('chip'), price,
+                img: safeImg(g('img')), desc: g('desc'), ing: g('ing') });
+    });
+    return out;
+  }
+
+ 
+  /* @pure-end */
+
+  const label = (p) => (p.weight ? `${p.name} (${p.weight})` : p.name);
+
+  // Görsel yüklenemezse bozuk simge yerine arka plan görünsün
   document.addEventListener('error', (e) => { if (e.target.tagName === 'IMG') e.target.style.visibility = 'hidden'; }, true);
 
-  const byId = new Map(PRODUCTS.map((p) => [p.id, p]));
-  const label = (p) => `${p.name} (${p.weight})`;
-
-  /* ---------- Sepet (LocalStorage: yalnızca id + adet; ad ve fiyat kataloğdan gelir) ---------- */
+  /* ---------- Durum ---------- */
+  let PRODUCTS = [];
+  let byId = new Map();
+  let filter = 'all';
   let cart = load();
 
   function load() {
@@ -125,7 +215,7 @@ const IL_ILCE = {
       const m = new Map();
       d.forEach((i) => {
         const id = String(i && i.id), q = Math.floor(Number(i && i.qty));
-        if (byId.has(id) && q > 0) m.set(id, Math.min(MAX_QTY, (m.get(id) || 0) + q));
+        if (id && q > 0) m.set(id, Math.min(MAX_QTY, (m.get(id) || 0) + q));
       });
       return Array.from(m, ([id, qty]) => ({ id, qty }));
     } catch (e) { return []; }
@@ -136,57 +226,122 @@ const IL_ILCE = {
     } catch (e) { /* depolama kapalı */ }
   }
 
+  // Sepet satırları her zaman güncel kataloğa göre hesaplanır (ad ve fiyat katalogdan gelir)
+  const lines = () => cart.filter((i) => byId.has(i.id)).map((i) => ({ id: i.id, qty: i.qty, p: byId.get(i.id) }));
+  const count = () => lines().reduce((s, l) => s + l.qty, 0);
   function totals() {
-    const sub = cart.reduce((s, i) => s + byId.get(i.id).price * i.qty, 0);
+    const sub = money(lines().reduce((s, l) => s + l.p.price * l.qty, 0));
     const ship = sub === 0 || sub >= FREE_SHIPPING_LIMIT ? 0 : SHIPPING_FEE;
-    return { sub, ship, total: sub + ship };
+    return { sub, ship, total: money(sub + ship) };
   }
-  const count = () => cart.reduce((s, i) => s + i.qty, 0);
 
-  /* ---------- Ürün vitrini ---------- */
-  $('#grid').innerHTML = PRODUCTS.map((p) => `
-    <article class="card" data-cat="${esc(p.cat)}">
-      <div class="card__img">
-        <img src="${esc(p.img)}" alt="${esc(label(p))}" width="400" height="300" loading="lazy">
+  /* ---------- Google Sheets ---------- */
+  async function loadCatalog() {
+    const url = String(GOOGLE_SHEET_CSV_URL || '').trim();
+    if (!/^https?:\/\//i.test(url)) return FALLBACK_PRODUCTS;
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const res = await fetch(url, { signal: ctl.signal, cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const list = sheetToProducts(await res.text());
+      if (!list.length) throw new Error('Tabloda geçerli ürün bulunamadı (ad ve fiyat sütunları gerekli)');
+      return list;
+    } catch (err) {
+      console.warn('Google Sheets verisi alınamadı, yedek ürünler kullanılıyor:', err);
+      return FALLBACK_PRODUCTS;
+    } finally { clearTimeout(timer); }
+  }
+
+  function setProducts(list) {
+    PRODUCTS = list;
+    byId = new Map(list.map((p) => [p.id, p]));
+    const before = cart.length;
+    cart = cart.filter((i) => byId.has(i.id)); // artık satışta olmayan ürünleri sepetten düş
+    if (cart.length !== before) save();
+    renderGrid();
+    render();
+  }
+
+  /* ---------- Vitrin ---------- */
+  function cardHTML(p) {
+    const id = esc(p.id);
+    return `
+    <article class="card">
+      <div class="card__img" data-view="${id}">
+        ${p.img ? `<img src="${esc(p.img)}" alt="${esc(label(p))}" width="400" height="300" loading="lazy">` : ''}
         <span class="tag">Yeni Mahsul</span>
       </div>
       <div class="card__body">
-        <span class="chip">${esc(p.chip || p.weight)}</span>
-        <h3>${esc(p.name)}</h3>
+        <span class="chip">${esc(p.chip || p.weight || 'Fındık')}</span>
+        <h3 data-view="${id}">${esc(p.name)}</h3>
         <div class="rating" aria-label="5 üzerinden 4,9 puan"><span class="stars" aria-hidden="true">★★★★★</span><b>4.9</b></div>
         <div class="card__bottom">
           <span class="price">${fmt(p.price)}</span>
-          <button type="button" class="btn btn--primary" data-add="${esc(p.id)}">Sepete Ekle</button>
+          <div class="card__actions">
+            <button type="button" class="btn btn--ghost" data-view="${id}">İncele</button>
+            <button type="button" class="btn btn--primary" data-add="${id}">Sepete Ekle</button>
+          </div>
         </div>
       </div>
-    </article>`).join('');
+    </article>`;
+  }
+
+  function renderGrid() {
+    const list = filter === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.cat === filter);
+    $('#grid').innerHTML = list.length ? list.map(cardHTML).join('') : '<p class="grid__msg">Bu kategoride ürün bulunamadı.</p>';
+  }
 
   $('#filters').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-f]');
     if (!b) return;
+    filter = b.dataset.f;
     $$('#filters button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    $$('#grid .card').forEach((c) => { c.hidden = b.dataset.f !== 'all' && c.dataset.cat !== b.dataset.f; });
+    renderGrid();
   });
 
-  /* ---------- Çizim ---------- */
+  $('#grid').addEventListener('click', (e) => {
+    const add = e.target.closest('[data-add]');
+    if (add) { addToCart(add.dataset.add, 1); flash(add); return; }
+    const v = e.target.closest('[data-view]');
+    if (v) openDetail(v.dataset.view);
+  });
+
+  function flash(btn) {
+    const t = btn.textContent;
+    btn.textContent = 'Eklendi ✓';
+    btn.classList.add('added');
+    setTimeout(() => { btn.textContent = t; btn.classList.remove('added'); }, 900);
+  }
+
+  /* ---------- Sepet ---------- */
+  function addToCart(id, n) {
+    if (!byId.has(id)) return;
+    const f = cart.find((i) => i.id === id);
+    if (f) f.qty = Math.min(MAX_QTY, f.qty + n); else cart.push({ id, qty: Math.min(MAX_QTY, n) });
+    commit();
+    const c = $('#openCart');
+    c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
+    openDrawer();
+  }
+
   function render() {
     const { sub, ship, total } = totals();
+    const ls = lines();
 
-    $('#cartItems').innerHTML = cart.length ? cart.map((i) => {
-      const p = byId.get(i.id);
-      return `<li class="cart-item">
-        <div><strong>${esc(label(p))}</strong><small>${fmt(p.price)}</small></div>
+    $('#cartItems').innerHTML = ls.length ? ls.map((l) => `
+      <li class="cart-item">
+        <div><strong>${esc(label(l.p))}</strong><small>${fmt(l.p.price)}</small></div>
         <div class="side">
           <div class="qty">
-            <button type="button" data-act="dec" data-id="${esc(i.id)}" aria-label="Azalt">−</button>
-            <span>${i.qty}</span>
-            <button type="button" data-act="inc" data-id="${esc(i.id)}" aria-label="Arttır">+</button>
+            <button type="button" data-act="dec" data-id="${esc(l.id)}" aria-label="Azalt">−</button>
+            <span>${l.qty}</span>
+            <button type="button" data-act="inc" data-id="${esc(l.id)}" aria-label="Arttır">+</button>
           </div>
-          <strong>${fmt(p.price * i.qty)}</strong>
-          <button type="button" class="del" data-act="del" data-id="${esc(i.id)}">Sil</button>
+          <strong>${fmt(l.p.price * l.qty)}</strong>
+          <button type="button" class="del" data-act="del" data-id="${esc(l.id)}">Sil</button>
         </div>
-      </li>`;
-    }).join('') : '<li class="empty">Sepetiniz şu an boş.</li>';
+      </li>`).join('') : '<li class="empty">Sepetiniz şu an boş.</li>';
 
     // Kargo çubuğu
     const pct = Math.min(100, Math.floor((sub / FREE_SHIPPING_LIMIT) * 100));
@@ -198,7 +353,6 @@ const IL_ILCE = {
       : sub === 0 ? `${fmt(FREE_SHIPPING_LIMIT)} ve üzeri siparişlerde kargo ücretsiz`
       : `Ücretsiz kargoya ${fmt(FREE_SHIPPING_LIMIT - sub)} kaldı`;
 
-    // Toplamlar
     $('#subTotal').textContent = fmt(sub);
     const sc = $('#shipCost');
     sc.textContent = sub === 0 ? '—' : ship ? fmt(ship) : 'Ücretsiz';
@@ -208,27 +362,10 @@ const IL_ILCE = {
     const badge = $('#cartCount');
     badge.textContent = count();
     badge.classList.toggle('on', count() > 0);
-    $('#checkoutBtn').disabled = !cart.length;
+    $('#checkoutBtn').disabled = !ls.length;
   }
 
   const commit = () => { save(); render(); };
-
-  /* ---------- Sepet işlemleri ---------- */
-  $('#grid').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-add]');
-    if (!b) return;
-    const f = cart.find((i) => i.id === b.dataset.add);
-    if (f) f.qty = Math.min(MAX_QTY, f.qty + 1); else cart.push({ id: b.dataset.add, qty: 1 });
-    commit();
-
-    const t = b.textContent;
-    b.textContent = 'Eklendi ✓';
-    b.classList.add('added');
-    setTimeout(() => { b.textContent = t; b.classList.remove('added'); }, 900);
-    const c = $('#openCart');
-    c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
-    openDrawer();
-  });
 
   $('#cartItems').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-act]');
@@ -259,7 +396,7 @@ const IL_ILCE = {
   function openModal(id) {
     const m = $('#' + id);
     m.classList.add('on'); m.setAttribute('aria-hidden', 'false'); lock();
-    const f = m.querySelector('input,.btn');
+    const f = m.querySelector('input,select,.btn');
     if (f) f.focus({ preventScroll: true });
   }
   function closeModal(m) { m.classList.remove('on'); m.setAttribute('aria-hidden', 'true'); lock(); }
@@ -276,19 +413,141 @@ const IL_ILCE = {
     const open = $$('.modal.on');
     if (open.length) closeModal(open[open.length - 1]); else closeDrawer();
   });
-
   window.addEventListener('storage', (e) => { if (e.key === KEY) { cart = load(); render(); } });
+
+  /* ---------- Ürün detay modalı ---------- */
+  let dId = null, dQty = 1;
+
+  function syncDetailQty() {
+    const p = byId.get(dId);
+    if (!p) return;
+    $('#dQty').textContent = dQty;
+    $('#dAdd').textContent = `Sepete Ekle · ${fmt(p.price * dQty)}`;
+  }
+
+  function openDetail(id) {
+    const p = byId.get(id);
+    if (!p) return;
+    dId = id; dQty = 1;
+
+    const img = $('#dImg');
+    img.style.visibility = '';
+    if (p.img) { img.src = p.img; img.alt = label(p); img.hidden = false; }
+    else { img.removeAttribute('src'); img.hidden = true; }
+
+    const chip = $('#dChip');
+    chip.textContent = p.chip || p.weight;
+    chip.hidden = !(p.chip || p.weight);
+
+    $('#dName').textContent = p.name;
+    $('#dPrice').textContent = fmt(p.price);
+
+    const desc = $('#dDesc');
+    desc.textContent = p.desc;
+    desc.hidden = !p.desc;
+
+    $('#dIng').textContent = p.ing;
+    $('#dIngSec').hidden = !p.ing;
+
+    $('.detail').scrollTop = 0;
+    syncDetailQty();
+    openModal('detail');
+  }
+
+  $('#dMinus').addEventListener('click', () => { dQty = Math.max(1, dQty - 1); syncDetailQty(); });
+  $('#dPlus').addEventListener('click', () => { dQty = Math.min(MAX_QTY, dQty + 1); syncDetailQty(); });
+  $('#dAdd').addEventListener('click', () => {
+    const id = dId, n = dQty;
+    closeModal($('#detail'));
+    addToCart(id, n);
+  });
+
+  /* ---------- Yasal metinler (footer linkleri) ---------- */
+  const NOTE = '<p class="note">Bu metin örnektir. Yayına almadan önce [köşeli] alanları doldurun ve bir hukuk danışmanına kontrol ettirin.</p>';
+  const LEGAL = {
+    iade: { title: 'İptal ve İade', html: NOTE + `
+      <h4>1. Cayma hakkı</h4>
+      <p>Alıcı, ürünü teslim aldığı tarihten itibaren 14 gün içinde, gerekçe göstermeden cayma hakkını kullanabilir. Talep WhatsApp hattımız veya e-posta ile iletilir.</p>
+      <h4>2. Gıda güvenliği şartı</h4>
+      <ul>
+        <li>İade; yalnızca <strong>ambalajı açılmamış</strong>, mührü ve koruyucu bandı bozulmamış, kullanılmamış ürünlerde kabul edilir.</li>
+        <li>Ambalajı açılmış gıda ürünleri sağlık ve hijyen nedeniyle iade edilemez (Mesafeli Sözleşmeler Yönetmeliği istisnası).</li>
+      </ul>
+      <h4>3. Hasarlı veya ayıplı teslimat</h4>
+      <ul>
+        <li>Paketi kargo görevlisinin yanında kontrol edin. Ezik, yırtık veya açılmış paketi teslim almayın ve <strong>kargo hasar tespit tutanağı</strong> düzenletin.</li>
+        <li>Tutanağın bir örneğini ve ürün fotoğraflarını teslimattan itibaren [2] gün içinde bize iletin; ürün yenilenir veya bedeli iade edilir.</li>
+      </ul>
+      <h4>4. İade süreci</h4>
+      <p>Onaylanan iadelerde ürün bedeli, ürünün tarafımıza ulaşmasından itibaren 14 gün içinde ödemenin yapıldığı yönteme iade edilir. Cayma hakkında iade kargo bedeli alıcıya, hasarlı veya ayıplı üründe satıcıya aittir.</p>
+      <h4>5. Sipariş iptali</h4>
+      <p>Kargoya verilmeden önce iptal için WhatsApp hattımızdan bize ulaşabilirsiniz. Kargoya verilmiş siparişlerde yukarıdaki iade koşulları uygulanır.</p>` },
+    kvkk: { title: 'KVKK Aydınlatma Metni', html: NOTE + `
+      <h4>Veri sorumlusu</h4>
+      <p>Köken Fındık, [firma ünvanı], [adres]. İletişim: [e-posta].</p>
+      <h4>İşlenen veriler ve amaç</h4>
+      <p>Ad soyad, telefon, teslimat adresi (il, ilçe, açık adres), sipariş notu ve sipariş içeriği; siparişin alınması, hazırlanması, teslimatı ve sizinle iletişim kurulması amacıyla işlenir.</p>
+      <h4>Hukuki sebep</h4>
+      <p>Bir sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması ve veri sorumlusunun hukuki yükümlülüklerini yerine getirmesi (KVKK m.5/2).</p>
+      <h4>Aktarım</h4>
+      <p>Verileriniz, teslimatın yapılabilmesi için kargo firmasına ve siparişin iletildiği WhatsApp hizmetine, yasal zorunluluk halinde yetkili kurumlara aktarılabilir.</p>
+      <h4>Saklama süresi</h4>
+      <p>Mevzuatta öngörülen süreler boyunca saklanır, süre sonunda silinir veya anonim hale getirilir.</p>
+      <h4>Haklarınız</h4>
+      <p>KVKK m.11 uyarınca verilerinizin işlenip işlenmediğini öğrenme, düzeltme, silme ve itiraz haklarına sahipsiniz. Başvurularınızı yukarıdaki iletişim adresine iletebilirsiniz.</p>` },
+    teslimat: { title: 'Teslimat ve Kargo', html: NOTE + `
+      <h4>Kargo ücreti</h4>
+      <p>${fmt(FREE_SHIPPING_LIMIT)} ve üzeri siparişlerde kargo ücretsizdir. Bu tutarın altındaki siparişlere ${fmt(SHIPPING_FEE)} kargo ücreti eklenir.</p>
+      <h4>Hazırlık ve teslimat süresi</h4>
+      <p>Siparişler WhatsApp üzerinden onaylandıktan sonra [1-2] iş günü içinde hazırlanıp [kargo firması] ile gönderilir. Teslimat süresi bölgeye göre genellikle [1-3] iş günüdür.</p>
+      <h4>Teslim alırken</h4>
+      <p>Paketi kargo görevlisinin yanında kontrol edin. Hasar varsa tutanak düzenletin (ayrıntılar için "İptal ve İade").</p>
+      <h4>Adres bilgisi</h4>
+      <p>Teslimat, siparişte belirttiğiniz adrese yapılır. Eksik veya hatalı adres ve telefon bilgisi teslimatı geciktirebilir.</p>` },
+    hakkimizda: { title: 'Hakkımızda', html: NOTE + `
+      <p>Köken Fındık; taze Karadeniz fındığını kırma, kavurma, ezme ve paketleme aşamalarından geçirerek doğrudan size ulaştıran bir üreticidir.</p>
+      <p>[Markanın hikâyesi, kuruluş yılı ve üretim anlayışı buraya yazılabilir.]</p>` },
+    tesis: { title: 'Üretim Tesisimiz', html: NOTE + `
+      <p>Kırma, kavurma, ezme ve paketleme işlemleri kendi tesisimizde yapılır.</p>
+      <p>[Tesis adresi, kapasite, hijyen ve kalite belgeleri buraya yazılabilir.]</p>` },
+    takip: { title: 'Sipariş Takibi', html: NOTE + `
+      <p>Siparişleriniz WhatsApp üzerinden alındığı için durumunu aynı hat üzerinden öğrenebilirsiniz. Adınız ve telefon numaranızla bize yazmanız yeterlidir.</p>
+      <p>Kargoya verildiğinde takip numaranız tarafınıza iletilir.</p>` },
+    satis: { title: 'Mesafeli Satış Sözleşmesi', html: NOTE + `
+      <h4>Madde 1 – Taraflar</h4>
+      <p>SATICI: Köken Fındık, [firma ünvanı, adres]. ALICI: Sipariş mesajında adı, telefonu ve teslimat adresi yer alan kişi.</p>
+      <h4>Madde 2 – Konu</h4>
+      <p>ALICI'nın WhatsApp üzerinden sipariş ettiği ürünlerin satışı ve teslimidir. Ürünlerin türü, adedi, fiyatı ve kargo ücreti sipariş özetinde yer alır.</p>
+      <h4>Madde 3 – Cayma hakkı</h4>
+      <p>Cayma hakkı ve gıda ürünlerine ilişkin istisnalar "İptal ve İade" metninde belirtilmiştir.</p>
+      <h4>Madde 4 – Uyuşmazlık</h4>
+      <p>Uyuşmazlıklarda ALICI'nın yerleşim yerindeki Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri yetkilidir.</p>` },
+    gizlilik: { title: 'Gizlilik ve Çerez Politikası', html: NOTE + `
+      <p>Bu site, sepetinizin sayfa yenilense de korunması için tarayıcınızın yerel depolama alanını kullanır. Bu bilgi cihazınızda kalır, tarafımıza gönderilmez.</p>
+      <p>Site, yazı tiplerini Google Fonts üzerinden yükler. Reklam veya takip amaçlı çerez kullanılmaz. [Analiz aracı eklerseniz bu metni güncelleyin.]</p>
+      <p>Sipariş sırasında girdiğiniz bilgilerin işlenmesi için KVKK Aydınlatma Metni'ne bakınız.</p>` }
+  };
+
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-legal]');
+    if (!a) return;
+    e.preventDefault();
+    const d = LEGAL[a.dataset.legal];
+    if (!d) return;
+    $('#legalTitle').textContent = d.title;
+    $('#legalBody').innerHTML = d.html;
+    $('#legalBody').scrollTop = 0;
+    openModal('legal');
+  });
 
   /* ---------- Teslimat formu ---------- */
   const form = $('#orderForm'), errEl = $('#formErr');
 
   $('#checkoutBtn').addEventListener('click', () => {
-    if (!cart.length) return;
+    const ls = lines();
+    if (!ls.length) return;
     const { ship, total } = totals();
-    $('#coList').innerHTML = cart.map((i) => {
-      const p = byId.get(i.id);
-      return `<li><span>${esc(label(p))} × ${i.qty}</span><span>${fmt(p.price * i.qty)}</span></li>`;
-    }).join('');
+    $('#coList').innerHTML = ls.map((l) => `<li><span>${esc(label(l.p))} × ${l.qty}</span><span>${fmt(l.p.price * l.qty)}</span></li>`).join('');
     const cs = $('#coShip');
     cs.textContent = ship ? fmt(ship) : 'Ücretsiz';
     cs.classList.toggle('free', !ship);
@@ -316,10 +575,7 @@ const IL_ILCE = {
   /* ---------- WhatsApp mesajı ve yönlendirme ---------- */
   function buildMessage(v) {
     const { sub, ship, total } = totals();
-    const items = cart.map((i) => {
-      const p = byId.get(i.id);
-      return `• ${i.qty}x ${label(p)} - ${fmt(p.price * i.qty)}`;
-    });
+    const items = lines().map((l) => `• ${l.qty}x ${label(l.p)} - ${fmt(l.p.price * l.qty)}`);
     return [
       '*KÖKEN FINDIK - YENİ SİPARİŞ* 🌰',
       SEP,
@@ -341,18 +597,15 @@ const IL_ILCE = {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     errEl.textContent = '';
-    if (!cart.length) return;
+    if (!lines().length) return;
 
-    // Boşluk/yeni satırları sadeleştirip değerleri al
     const v = {};
     ['name', 'phone', 'city', 'district', 'address', 'note'].forEach((k) => {
       v[k] = form.elements[k].value.replace(/\s+/g, ' ').trim();
     });
 
-    // Zorunlu alan doğrulaması
-    const required = ['name', 'phone', 'city', 'district', 'address'];
     let bad = null;
-    required.forEach((k) => {
+    ['name', 'phone', 'city', 'district', 'address'].forEach((k) => {
       const el = form.elements[k];
       const ok = v[k] && el.checkValidity();
       el.classList.toggle('bad', !ok);
@@ -376,7 +629,6 @@ const IL_ILCE = {
     const w = window.open(url, '_blank');
     if (w) w.opener = null; else window.location.href = url;
 
-    // Sepeti temizle ve bilgilendir
     cart = [];
     commit();
     form.reset();
@@ -386,8 +638,19 @@ const IL_ILCE = {
     closeModal($('#checkout'));
     openModal('sent');
   });
-
   form.addEventListener('input', (e) => e.target.classList.remove('bad'));
 
+  /* ---------- Başlangıç ---------- */
+  
+    // Footer: WhatsApp hattı (WHATSAPP_NO sabitinden)
+  const fWa = $('#fWa');
+  if (/^\d{10,15}$/.test(WHATSAPP_NO)) {
+    fWa.href = `https://api.whatsapp.com/send?phone=${WHATSAPP_NO}`;
+    fWa.textContent = '+' + WHATSAPP_NO;
+    fWa.target = '_blank'; fWa.rel = 'noopener';
+  } else { fWa.removeAttribute('href'); }
+  
+  $('#grid').innerHTML = '<p class="grid__msg">Ürünler yükleniyor…</p>';
   render();
+  loadCatalog().then(setProducts);
 })();
