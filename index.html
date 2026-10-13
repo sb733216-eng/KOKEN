@@ -84,43 +84,40 @@
     </div>
   </div>
 </section>
-
-<footer class="footer">
-  <div class="container footer__inner">
+<div class="container footer__inner">
     <div>
       <h4>Kurumsal</h4>
       <ul>
-        <li><a href="#" data-legal="hakkimizda">Hakkımızda</a></li>
-        <li><a href="#" data-legal="tesis">Üretim Tesisimiz</a></li>
+        <li><a href="hakkimizda.html">Hakkımızda</a></li>
+        <li><a href="uretim-tesisimiz.html">Üretim Tesisimiz</a></li>
       </ul>
     </div>
     <div>
       <h4>Müşteri Hizmetleri</h4>
       <ul>
-        <li><a href="#" data-legal="takip">Sipariş Takibi</a></li>
-        <li><a href="#" data-legal="teslimat">Teslimat ve Kargo</a></li>
-        <li><a href="#" data-legal="iade">İptal ve İade</a></li>
+        <li><a href="siparis-takibi.html">Sipariş Takibi</a></li>
+        <li><a href="teslimat-ve-kargo.html">Teslimat ve Kargo</a></li>
+        <li><a href="iptal-ve-iade.html">İptal ve İade</a></li>
       </ul>
     </div>
     <div>
       <h4>Yasal Bilgiler</h4>
       <ul>
-        <li><a href="#" data-legal="kvkk">KVKK Aydınlatma Metni</a></li>
-        <li><a href="#" data-legal="satis">Mesafeli Satış Sözleşmesi</a></li>
-        <li><a href="#" data-legal="gizlilik">Gizlilik ve Çerez Politikası</a></li>
+        <li><a href="kvkk.html">KVKK Aydınlatma Metni</a></li>
+        <li><a href="mesafeli-satis-sozlesmesi.html">Mesafeli Satış Sözleşmesi</a></li>
+        <li><a href="cerez-politikasi.html">Gizlilik ve Çerez Politikası</a></li>
       </ul>
     </div>
     <div>
       <h4>İletişim</h4>
       <address>
-        <p>Adres: [Mahalle, Sokak No, İlçe / İl]</p>
-        <p>Telefon: 0 (000) 000 00 00</p>
-        <p>WhatsApp Hattı: <a id="fWa" href="#">WhatsApp ile yazın</a></p>
+        <p>Adres: Kökenli, Tokat Ordu Yolu No:34, 52000 Altınordu/Ordu</p>
+        <p>Telefon: <a href="tel:+905313385955">0531 338 59 55</a></p>
+        <p>WhatsApp Hattı: <a href="https://wa.me/905313385955" target="_blank" rel="noopener">0531 338 59 55</a></p>
       </address>
     </div>
   </div>
   <div class="footer__copy">© 2026 Köken Fındık · Kırma, Kavurma, Ezme, Paketleme. Tüm hakları saklıdır.</div>
-</footer>
 </footer>
 
 <!-- SEPET -->
@@ -198,6 +195,7 @@
         <h3 id="dName"></h3>
         <p class="detail__price" id="dPrice"></p>
 		        <ul class="badges" aria-label="Ürün özellikleri"><li>Glutensiz</li><li>Katkısız</li><li>%100 Doğal</li></ul>
+                    <ul class="badges badges--earth" id="dCatBadges" hidden></ul>
         <p class="detail__desc" id="dDesc"></p>
         <section class="detail__sec" id="dIngSec"><h4>İçindekiler</h4><p id="dIng"></p></section>
                 <dl class="info">
@@ -205,6 +203,10 @@
           <div><dt>Raf Ömrü</dt><dd>Tazeliğini 12 ay korur.</dd></div>
           <div><dt>Alerjen Uyarısı</dt><dd>Fındık içerir.</dd></div>
         </dl>
+                <section class="detail__sec" id="dFaq" hidden>
+          <h4>Sık Sorulan Sorular</h4>
+          <div class="faq" id="faqList"></div>
+        </section>
         <div class="detail__buy">
           <div class="qty qty--lg">
             <button type="button" id="dMinus" aria-label="Adedi azalt">−</button>
@@ -213,6 +215,7 @@
           </div>
           <button type="button" class="btn btn--primary btn--lg" id="dAdd">Sepete Ekle</button>
         </div>
+                <p class="micro">📦 Özel korumalı ambalaj. Kırılma garantili gönderim; hasarlı ürünler sorgusuz yenilenir.</p>
       </div>
     </div>
   </div>

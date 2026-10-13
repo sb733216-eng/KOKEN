@@ -274,7 +274,8 @@ const IL_ILCE = {
       </div>
       <div class="card__body">
         <span class="chip">${esc(p.chip || p.weight || 'Fındık')}</span>
-        <h3 data-view="${id}">${esc(p.name)}</h3>
+               <h3 data-view="${id}">${esc(p.name)}</h3>
+        ${badgeHTML(p, 'badges--sm')}
         <div class="rating" aria-label="5 üzerinden 4,9 puan"><span class="stars" aria-hidden="true">★★★★★</span><b>4.9</b></div>
         <div class="card__bottom">
           <span class="price">${fmt(p.price)}</span>
@@ -414,6 +415,41 @@ const IL_ILCE = {
     if (open.length) closeModal(open[open.length - 1]); else closeDrawer();
   });
   window.addEventListener('storage', (e) => { if (e.key === KEY) { cart = load(); render(); } });
+
+
+  /* ---------- Rozetler ve SSS ---------- */
+  const EZME_BADGES = ['%100 Karadeniz Fındığı', 'Katkısız & İlave Yağsız', 'Pancar Şekeri ile Üretilmiştir'];
+  const FAQ_CATS = ['ezme']; // SSS'nin gösterileceği kategoriler. Tüm ürünlerde göstermek için: ['ezme', 'kavrulmus', 'cig', 'paketleme']
+  const FAQ = [
+    ['Ürünün üzerinde yağ tabakası birikmesi normal mi?', 'Evet. Kıvam artırıcı ve emülgatör bulunmadığından fındığın kendi doğal yağı üste toplanır. Tüketmeden önce karıştırmanız yeterlidir.'],
+    ['İlave palm yağı, trans yağ veya koruyucu var mı?', 'Hayır. Yalnızca birinci kalite Karadeniz fındığı ve pancar şekeri içerir. İlave yağ veya katkı barındırmaz.'],
+    ['Kavanoz açıldıktan sonra nasıl saklanmalıdır?', 'Buzdolabına koymayınız. 18-24°C oda sıcaklığında, doğrudan güneş almayan serin ve kuru yerde saklayınız. Raf ömrü 12 aydır.'],
+    ['Siparişim ne zaman kargoya verilir?', "Haftalık taze üretim döngüsüyle hazırlanır; saat 14:00'e kadar verilen siparişler aynı gün kargoya teslim edilir."]
+  ];
+
+  const catBadges = (p) => (p.cat === 'ezme' ? EZME_BADGES : []);
+  const badgeHTML = (p, cls) => {
+    const b = catBadges(p);
+    return b.length ? `<ul class="badges badges--earth ${cls || ''}">${b.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  };
+
+  function renderFaq() {
+    $('#faqList').innerHTML = FAQ.map(([q, a], i) => `
+      <div class="faq__item">
+        <button type="button" class="faq__q" id="faqQ${i}" aria-expanded="false" aria-controls="faqA${i}">${esc(q)}<span class="faq__ic" aria-hidden="true"></span></button>
+        <div class="faq__a" id="faqA${i}" role="region" aria-labelledby="faqQ${i}"><div><p>${esc(a)}</p></div></div>
+      </div>`).join('');
+  }
+
+  $('#faqList').addEventListener('click', (e) => {
+    const b = e.target.closest('.faq__q');
+    if (!b) return;
+    const item = b.parentElement;
+    const open = !item.classList.contains('open');
+    item.classList.toggle('open', open);
+    b.setAttribute('aria-expanded', String(open));
+  });
+
 
   /* ---------- Ürün detay modalı ---------- */
   let dId = null, dQty = 1;
@@ -640,16 +676,6 @@ const IL_ILCE = {
   });
   form.addEventListener('input', (e) => e.target.classList.remove('bad'));
 
-  /* ---------- Başlangıç ---------- */
-  
-    // Footer: WhatsApp hattı (WHATSAPP_NO sabitinden)
-  const fWa = $('#fWa');
-  if (/^\d{10,15}$/.test(WHATSAPP_NO)) {
-    fWa.href = `https://api.whatsapp.com/send?phone=${WHATSAPP_NO}`;
-    fWa.textContent = '+' + WHATSAPP_NO;
-    fWa.target = '_blank'; fWa.rel = 'noopener';
-  } else { fWa.removeAttribute('href'); }
-  
   
   // Yüzen WhatsApp adası
   const waIsland = $('#waIsland');
