@@ -261,3 +261,30 @@ html{scroll-padding-top:140px}
 @media (max-width:480px){
   .footer__inner{grid-template-columns:1fr}
 }
+/* ===== Güncelleme: premium marka alanı ===== */
+.header__inner .brand{flex:0 1 auto;min-width:0;gap:.8rem;font-size:inherit;line-height:1}
+.brand .brand__logo{width:56px;height:56px;border-radius:50%;object-fit:cover;background:var(--white);box-shadow:0 0 0 2px var(--white),0 2px 10px rgba(28,90,39,.18)}
+.brand__text{display:flex;flex-direction:column;justify-content:center;gap:.3rem;min-width:0}
+.brand__name{font-family:var(--head);font-size:1.45rem;font-weight:700;letter-spacing:-0.5px;line-height:1;color:var(--green)}
+/* #c29b38 küçük yazıda düşük kontrast verdiği için koyulaştırıldı; birebir istenirse #c29b38 yazın */
+.brand__slogan{font-family:var(--body);font-size:.75rem;font-weight:500;font-style:italic;letter-spacing:.8px;line-height:1;color:#8a6914;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:480px){
+  .brand .brand__logo{width:46px;height:46px}
+  .brand__name{font-size:1.2rem}
+  .brand__slogan{font-size:.62rem;letter-spacing:.3px}
+}
+
+/* ===== Güncelleme: yüzen WhatsApp adası ===== */
+.wa-island{position:fixed;right:max(1rem,env(safe-area-inset-right));bottom:max(1rem,env(safe-area-inset-bottom));z-index:110;display:inline-flex;align-items:center;gap:.65rem;padding:.4rem 1.15rem .4rem .4rem;background:var(--white);color:var(--text);border:1px solid var(--line);border-radius:999px;box-shadow:0 10px 30px rgba(20,60,30,.22);font-weight:600;font-size:.95rem;transition:transform .2s,box-shadow .2s,right .3s,bottom .3s}
+.wa-island:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(20,60,30,.3)}
+.wa-island:active{transform:scale(.97)}
+.wa-island__ic{display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:50%;background:var(--wa);color:var(--white)}
+.pulse{position:relative;flex:none;width:10px;height:10px;border-radius:50%;background:#22c55e}
+.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;background:#22c55e;animation:ping 1.8s cubic-bezier(0,0,.2,1) infinite}
+@keyframes ping{0%{transform:scale(1);opacity:.7}80%,100%{transform:scale(2.6);opacity:0}}
+/* Sepet açıkken çekmecedeki butonların üstünü kapatmasın */
+body:has(.drawer.on) .wa-island{right:calc(min(420px,100%) + 1.2rem)}
+@media (max-width:560px){
+  .wa-island{font-size:.9rem;padding-right:1rem}
+  body:has(.drawer.on) .wa-island{right:max(1rem,env(safe-area-inset-right));bottom:15.5rem}
+}

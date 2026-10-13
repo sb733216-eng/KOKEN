@@ -650,6 +650,19 @@ const IL_ILCE = {
     fWa.target = '_blank'; fWa.rel = 'noopener';
   } else { fWa.removeAttribute('href'); }
   
+  
+  // Yüzen WhatsApp adası
+  const waIsland = $('#waIsland');
+  const waValid = /^\d{10,15}$/.test(WHATSAPP_NO);
+  if (waValid) {
+    waIsland.href = `https://wa.me/${WHATSAPP_NO}?text=${encodeURIComponent('Merhaba, Köken Fındık ürünleri hakkında bilgi almak istiyorum.')}`;
+  } else {
+    waIsland.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('WhatsApp hattı henüz tanımlı değil. script.js içindeki WHATSAPP_NO değerini girin.');
+    });
+  }
+  
   $('#grid').innerHTML = '<p class="grid__msg">Ürünler yükleniyor…</p>';
   render();
   loadCatalog().then(setProducts);
