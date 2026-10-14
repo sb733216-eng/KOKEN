@@ -330,3 +330,56 @@ body:has(.drawer.on) .wa-island{right:calc(min(420px,100%) + 1.2rem)}
   .sub-header .brand__slogan{display:none}
   .back-link{padding:.45rem .75rem;font-size:.85rem}
 }
+
+/* ===== Global: yüzen WhatsApp butonu (tüm sayfalar) ===== */
+.wa-float{position:fixed;bottom:20px;right:20px;z-index:1000;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s,opacity .2s}
+.wa-float:hover{transform:scale(1.08);box-shadow:0 10px 24px rgba(0,0,0,.32)}
+.wa-float svg{width:30px;height:30px;fill:currentColor}
+/* Sepet/modal açıkken butonların üstünü kapatmasın (ana sayfa) */
+body.no-scroll .wa-float{opacity:0;pointer-events:none}
+@media (max-width:768px){.wa-float{bottom:80px}}
+
+/* ===== Kart üzeri durumsal adet butonu ===== */
+.qty-control{display:flex;align-items:center;justify-content:space-between;gap:.2rem;min-height:44px;padding:.2rem;background:var(--green);color:var(--white);border-radius:999px}
+.qty-control button{flex:none;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:var(--white);font-size:1.15rem;font-weight:700;line-height:1;transition:background .2s}
+.qty-control button:hover{background:rgba(255,255,255,.32)}
+.qty-control span{flex:1;text-align:center;font-weight:700;font-size:.95rem}
+
+/* ===== Global: yüzen WhatsApp butonu (tüm sayfalar) ===== */
+.wa-float{position:fixed;bottom:20px;right:20px;z-index:1000;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s,opacity .2s}
+.wa-float:hover{transform:scale(1.08);box-shadow:0 10px 24px rgba(0,0,0,.32)}
+.wa-float svg{width:30px;height:30px;fill:currentColor}
+/* Sepet/modal açıkken butonların üstünü kapatmasın (ana sayfa) */
+body.no-scroll .wa-float{opacity:0;pointer-events:none}
+@media (max-width:768px){.wa-float{bottom:80px}}
+
+/* ===== Kart üzeri durumsal adet butonu ===== */
+.qty-control{display:flex;align-items:center;justify-content:space-between;gap:.2rem;min-height:44px;padding:.2rem;background:var(--green);color:var(--white);border-radius:999px}
+.qty-control button{flex:none;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:var(--white);font-size:1.15rem;font-weight:700;line-height:1;transition:background .2s}
+.qty-control button:hover{background:rgba(255,255,255,.32)}
+.qty-control span{flex:1;text-align:center;font-weight:700;font-size:.95rem}
+
+/* ===== Kargo bandında ilerleme çubuğu ===== */
+.announce{display:flex;flex-direction:column;align-items:center;gap:.4rem}
+.announce__bar{display:block;width:min(340px,80%);height:6px;background:rgba(255,255,255,.25);border-radius:999px;overflow:hidden}
+.announce__bar span{display:block;height:100%;width:0;background:#f4d58d;border-radius:999px;transition:width .4s ease,background .3s}
+.announce.free .announce__bar span{background:#7ee08f}
+
+/* ===== Sepet geri bildirimi (3 sn) ===== */
+.toast{position:fixed;left:50%;bottom:24px;z-index:1100;width:min(440px,calc(100% - 2rem));display:grid;gap:.8rem;padding:1rem 1.1rem 1.15rem;background:var(--white);border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px rgba(20,60,30,.28);overflow:hidden;visibility:hidden;opacity:0;transform:translate(-50%,16px);transition:opacity .25s,transform .25s,visibility .25s}
+.toast.on{visibility:visible;opacity:1;transform:translate(-50%,0)}
+.toast__msg{display:flex;align-items:center;gap:.6rem;font-weight:600;font-size:.95rem}
+.toast__ic{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--green);color:var(--white);font-size:.85rem}
+.toast__actions{display:grid;grid-template-columns:1.2fr 1fr;gap:.5rem}
+.toast__actions .btn{padding:.65rem .6rem;font-size:.9rem}
+.toast__timer{position:absolute;left:0;bottom:0;width:100%;height:3px;background:var(--green);transform-origin:left;transform:scaleX(0)}
+.toast.on .toast__timer{animation:toastTimer 3s linear forwards}
+@keyframes toastTimer{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+/* ===== Kargo bandı + header birlikte sabit, büyük ilerleme çubuğu ===== */
+.site-top{position:sticky;top:0;z-index:50}
+.site-top .header{position:relative;top:auto}
+.announce{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center;gap:.35rem 1rem;padding:.5rem 1rem;font-size:.9rem}
+.announce__bar{flex:1 1 220px;width:auto;min-width:180px;max-width:420px;height:12px;background:rgba(255,255,255,.28)}
+html{scroll-padding-top:200px}
+@media (max-width:860px){html{scroll-padding-top:210px}}

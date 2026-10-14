@@ -263,7 +263,38 @@ const IL_ILCE = {
     render();
   }
 
+
+
+
   /* ---------- Vitrin ---------- */
+
+    /* ---------- Kart üzeri durumsal adet butonu ---------- */
+  const cartQty = (id) => { const i = cart.find((x) => x.id === id); return i ? i.qty : 0; };
+
+  function addControlHTML(id) {
+    const q = cartQty(id), e = esc(id);
+    return q > 0
+      ? `<div class="qty-control" data-ctl="${e}"><button type="button" data-dec="${e}" aria-label="Adedi azalt">−</button><span aria-live="polite">${q}</span><button type="button" data-inc="${e}" aria-label="Adedi arttır">+</button></div>`
+      : `<button type="button" class="btn btn--primary" data-add="${e}" data-ctl="${e}">Sepete Ekle</button>`;
+  }
+
+  // Sepet her değiştiğinde ana sayfadaki kart butonlarını anlık eşitler
+  function syncCardControls() {
+    $$('#grid [data-ctl]').forEach((el) => {
+      const id = el.dataset.ctl, q = cartQty(id);
+      const isQty = el.classList.contains('qty-control');
+      if (q > 0 && isQty) { el.querySelector('span').textContent = q; return; }
+      if ((q > 0) === isQty) return;
+      const hadFocus = el.contains(document.activeElement);
+      el.outerHTML = addControlHTML(id);
+      if (hadFocus) {
+        const n = $$('#grid [data-ctl]').find((x) => x.dataset.ctl === id);
+        if (n) (n.querySelector('[data-inc]') || n).focus();
+      }
+    });
+  }
+
+
   function cardHTML(p) {
     const id = esc(p.id);
     return `
@@ -281,7 +312,7 @@ const IL_ILCE = {
           <span class="price">${fmt(p.price)}</span>
           <div class="card__actions">
             <button type="button" class="btn btn--ghost" data-view="${id}">İncele</button>
-            <button type="button" class="btn btn--primary" data-add="${id}">Sepete Ekle</button>
+                        ${addControlHTML(p.id)}
           </div>
         </div>
       </div>
@@ -301,9 +332,13 @@ const IL_ILCE = {
     renderGrid();
   });
 
-  $('#grid').addEventListener('click', (e) => {
+       $('#grid').addEventListener('click', (e) => {
     const add = e.target.closest('[data-add]');
-    if (add) { addToCart(add.dataset.add, 1); flash(add); return; }
+    if (add) { addToCart(add.dataset.add, 1, true); showToast(add.dataset.add); return; }
+    const inc = e.target.closest('[data-inc]');
+    if (inc) { addToCart(inc.dataset.inc, 1, true); showToast(inc.dataset.inc); return; }
+    const dec = e.target.closest('[data-dec]');
+    if (dec) { changeCartQty(dec.dataset.dec, -1); return; }
     const v = e.target.closest('[data-view]');
     if (v) openDetail(v.dataset.view);
   });
@@ -316,15 +351,47 @@ const IL_ILCE = {
   }
 
   /* ---------- Sepet ---------- */
-  function addToCart(id, n) {
+   // quiet = true: kart üzerindeki butonlar sepet çekmecesini açmaz (detay modalı açar)
+  function addToCart(id, n, quiet) {
     if (!byId.has(id)) return;
     const f = cart.find((i) => i.id === id);
     if (f) f.qty = Math.min(MAX_QTY, f.qty + n); else cart.push({ id, qty: Math.min(MAX_QTY, n) });
     commit();
     const c = $('#openCart');
     c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
-    openDrawer();
+    if (!quiet) openDrawer();
   }
+
+
+  // Adet 1 iken azaltılırsa ürün sepetten silinir (kart butonu "Sepete Ekle"ye döner)
+  function changeCartQty(id, delta) {
+    const it = cart.find((i) => i.id === id);
+    if (!it) return;
+    it.qty = Math.min(MAX_QTY, it.qty + delta);
+    if (it.qty <= 0) cart = cart.filter((i) => i !== it);
+    commit();
+  }
+
+  /* ---------- Sepet geri bildirimi (3 sn) ---------- */
+  const toast = $('#addToast');
+  let toastTimer = null;
+
+  function showToast(id) {
+    const p = byId.get(id);
+    if (!p) return;
+    const q = cartQty(id);
+    $('#toastMsg').textContent = q > 1 ? `${p.name}: sepette ${q} adet` : `${p.name} sepete eklendi`;
+    const tm = toast.querySelector('.toast__timer');
+    tm.style.animation = 'none'; void tm.offsetWidth; tm.style.animation = ''; // süre çubuğunu baştan başlat
+    toast.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 3000);
+  }
+  function hideToast() { toast.classList.remove('on'); clearTimeout(toastTimer); }
+
+  $('#toastContinue').addEventListener('click', hideToast);
+  $('#toastCheckout').addEventListener('click', () => { hideToast(); openDrawer(); });
+
 
   function render() {
     const { sub, ship, total } = totals();
@@ -364,6 +431,20 @@ const IL_ILCE = {
     badge.textContent = count();
     badge.classList.toggle('on', count() > 0);
     $('#checkoutBtn').disabled = !ls.length;
+
+    
+       // Tepe kargo bandı
+    const banner = $('#topShippingBanner');
+    if (banner) {
+      $('#topShippingText').textContent =
+        sub === 0 ? `${fmt(FREE_SHIPPING_LIMIT)} ve Üzeri Siparişlerde Kargo Ücretsiz! | Doğrudan Üreticiden Taze Karadeniz Fındığı`
+        : sub < FREE_SHIPPING_LIMIT ? `Ücretsiz kargoya ${fmt(FREE_SHIPPING_LIMIT - sub)} kaldı!`
+        : '🎉 Tebrikler! Siparişinizde Kargo Ücretsiz!';
+      $('#topShippingBar').style.width = Math.min(100, Math.floor((sub / FREE_SHIPPING_LIMIT) * 100)) + '%';
+      banner.classList.toggle('free', sub >= FREE_SHIPPING_LIMIT);
+    }
+
+    syncCardControls();
   }
 
   const commit = () => { save(); render(); };
@@ -390,6 +471,9 @@ const IL_ILCE = {
     drawer.setAttribute('aria-hidden', 'false'); lock();
     $('#closeCart').focus({ preventScroll: true });
   }
+
+  hideToast();
+
   function closeDrawer() {
     drawer.classList.remove('on'); overlay.classList.remove('on');
     drawer.setAttribute('aria-hidden', 'true'); lock();
@@ -677,17 +761,7 @@ const IL_ILCE = {
   form.addEventListener('input', (e) => e.target.classList.remove('bad'));
 
   
-  // Yüzen WhatsApp adası
-  const waIsland = $('#waIsland');
-  const waValid = /^\d{10,15}$/.test(WHATSAPP_NO);
-  if (waValid) {
-    waIsland.href = `https://wa.me/${WHATSAPP_NO}?text=${encodeURIComponent('Merhaba, Köken Fındık ürünleri hakkında bilgi almak istiyorum.')}`;
-  } else {
-    waIsland.addEventListener('click', (e) => {
-      e.preventDefault();
-      alert('WhatsApp hattı henüz tanımlı değil. script.js içindeki WHATSAPP_NO değerini girin.');
-    });
-  }
+
   
   $('#grid').innerHTML = '<p class="grid__msg">Ürünler yükleniyor…</p>';
   render();
