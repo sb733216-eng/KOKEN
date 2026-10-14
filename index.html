@@ -37,11 +37,9 @@
   <div class="filters-bar">
     <div class="container">
       <nav class="filters" id="filters" aria-label="Ürün kategorileri">
+            <nav class="filters" id="filters" aria-label="Ürün kategorileri">
         <button type="button" data-f="all" aria-pressed="true">Tümü</button>
-        <button type="button" data-f="kavrulmus" aria-pressed="false">Kavrulmuş</button>
-        <button type="button" data-f="cig" aria-pressed="false">Çiğ</button>
-        <button type="button" data-f="ezme" aria-pressed="false">Ezme</button>
-        <button type="button" data-f="paketleme" aria-pressed="false">Paketleme</button>
+      </nav>
       </nav>
     </div>
   </div>
@@ -131,6 +129,10 @@
 <aside class="drawer" id="drawer" aria-label="Sepet" aria-hidden="true">
   <div class="drawer__head"><h3>Sepetim</h3><button type="button" class="x" id="closeCart" aria-label="Sepeti kapat">&times;</button></div>
   <div class="ship" id="ship">
+      <div class="upsell" id="upsell" hidden>
+    <p id="upsellText"></p>
+    <button type="button" class="btn btn--primary" id="upsellAdd">+ Sepete Ekle</button>
+  </div>
     <p><span id="shipText"></span><span id="shipPct"></span></p>
     <div class="bar"><span id="shipBar"></span></div>
   </div>
@@ -154,20 +156,49 @@
         <div class="row"><span>Kargo</span><span id="coShip"></span></div>
         <div class="row row--total"><span>Genel toplam</span><strong id="coTotal"></strong></div>
       </div>
-      <form id="orderForm" class="form" novalidate>
-        <label>Ad Soyad *<input name="name" autocomplete="name" required minlength="3" maxlength="80"></label>
-        <label>Telefon Numarası *<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="05xx xxx xx xx" pattern="^(\+90|0)?\s?5\d{2}\s?\d{3}\s?\d{2}\s?\d{2}$" title="Örnek: 05xx xxx xx xx"></label>
-        <div class="two">
-          <label>İl *<select name="city" required autocomplete="address-level1"><option value="">İl seçin</option></select></label>
-          <label>İlçe *<select name="district" required disabled autocomplete="address-level2"><option value="">Önce il seçin</option></select></label>
+ <form id="orderForm" class="form" novalidate>
+        <div id="stepInfo">
+          <div class="form">
+            <label>Ad Soyad *<input name="name" autocomplete="name" required minlength="3" maxlength="80"></label>
+            <label>Telefon Numarası *<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="05xx xxx xx xx" pattern="^(\+90|0)?\s?5\d{2}\s?\d{3}\s?\d{2}\s?\d{2}$" title="Örnek: 05xx xxx xx xx"></label>
+            <div class="two">
+              <label>İl *<select name="city" required autocomplete="address-level1"><option value="">İl seçin</option></select></label>
+              <label>İlçe *<select name="district" required disabled autocomplete="address-level2"><option value="">Önce il seçin</option></select></label>
+            </div>
+            <label>Açık Adres *<textarea name="address" rows="3" required minlength="10" maxlength="250" autocomplete="street-address" placeholder="Mahalle, sokak, bina ve daire no"></textarea></label>
+            <label>Sipariş Notu <small>(opsiyonel)</small><textarea name="note" rows="2" maxlength="300"></textarea></label>
+            <p class="form__err" id="formErr" role="alert"></p>
+            <button type="button" class="btn btn--primary btn--block btn--lg" id="toPayBtn">Ödeme Seçimine Geç</button>
+          </div>
         </div>
-        <label>Açık Adres *<textarea name="address" rows="3" required minlength="10" maxlength="250" autocomplete="street-address" placeholder="Mahalle, sokak, bina ve daire no"></textarea></label>
-        <label>Sipariş Notu <small>(opsiyonel)</small><textarea name="note" rows="2" maxlength="300"></textarea></label>
-        <p class="form__err" id="formErr" role="alert"></p>
-        <button type="submit" class="btn btn--wa btn--block btn--lg">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zM16.5 13.9c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.1 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.200 5.200 5.200 0 0 0 1.100 2.700 11.900 11.900 0 0 0 4.600 4c1.700.7 2.400.8 3.200.7a2.700 2.700 0 0 0 1.800-1.300 2.200 2.200 0 0 0 .2-1.300c-.1-.1-.2-.2-.5-.3z"/></svg>
-          WhatsApp ile Siparişi Gönder
-        </button>
+
+        <div id="stepPay" hidden>
+          <div class="form">
+            <fieldset class="paychoice">
+              <legend>Ödeme Yöntemi *</legend>
+              <label class="radio"><input type="radio" name="pay" value="iban"><span>Havale / EFT ile Ödeme (IBAN)</span></label>
+              <label class="radio"><input type="radio" name="pay" value="kapida"><span>Kapıda Ödeme</span></label>
+            </fieldset>
+
+            <div class="iban" id="ibanBox" hidden>
+              <dl>
+                <div><dt>Banka</dt><dd id="ibanBank"></dd></div>
+                <div><dt>Alıcı Adı</dt><dd id="ibanHolder"></dd></div>
+                <div><dt>IBAN</dt><dd class="iban__no" id="ibanNo"></dd></div>
+              </dl>
+              <button type="button" class="btn btn--ghost" id="ibanCopy">IBAN'ı Kopyala</button>
+            </div>
+
+            <p class="form__err" id="payErr" role="alert"></p>
+            <div class="step-actions">
+              <button type="button" class="btn btn--ghost" id="backBtn">← Geri Dön</button>
+              <button type="submit" class="btn btn--wa">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zM16.5 13.9c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.1 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.2-.2-.5-.3z"/></svg>
+                Siparişi WhatsApp'tan Onayla
+              </button>
+            </div>
+          </div>
+        </div>
       </form>
     </div>
   </div>
@@ -193,9 +224,13 @@
   <div class="modal__box modal__box--xl" role="dialog" aria-modal="true" aria-labelledby="dName">
     <button type="button" class="x x--float" data-close aria-label="Kapat">&times;</button>
     <div class="detail">
-      <div class="detail__media">
-        <img id="dImg" alt="" width="640" height="640">
-        <span class="chip" id="dChip"></span>
+  <div class="detail__media">
+        <div class="detail__stage">
+          <img id="dImg" alt="" width="640" height="640">
+          <span class="disc" id="dDisc" hidden></span>
+          <span class="chip" id="dChip"></span>
+        </div>
+        <div class="thumbs" id="dThumbs" hidden></div>
       </div>
       <div class="detail__info">
         <h3 id="dName"></h3>

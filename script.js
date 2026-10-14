@@ -6,6 +6,16 @@ const WHATSAPP_NO = "905313385955"; // Ülke koduyla, + ve boşluk olmadan. Örn
 const FREE_SHIPPING_LIMIT = 750;     // Bu tutar ve üzerinde kargo ücretsiz (TL)
 const SHIPPING_FEE = 60;             // Limit altındaki siparişlerde kargo ücreti (TL)
 
+// Havale/EFT bilgileri (ödeme adımında gösterilir) - buradan değiştirin
+const IBAN_INFO = {
+  bank: 'Banka Adı',
+  holder: 'Köken Fındık',
+  iban: 'TR00 0000 0000 0000 0000 0000 00'
+};
+
+// Kategori sekmesi adı: Sheet'teki "Kategori" yazısı kullanılır; yedek ürünler için bu adlar kullanılır
+const CAT_NAMES = { kavrulmus: 'Kavrulmuş', cig: 'Çiğ', ezme: 'Ezme', paketleme: 'Paketleme' };
+
 // Yedek ürünler. cat: kavrulmus | cig | ezme | paketleme
 // Açıklama ve içindekiler ÖRNEK metindir; kendi ürün etiketinize göre değiştirin.
 const FALLBACK_PRODUCTS = [
@@ -133,11 +143,16 @@ const IL_ILCE = {
   const safeImg = (s) => (/^(https?:\/\/\S+|[^\s:"'<>]+)$/i.test(s) ? s : '');
 
   // Sheet sütun başlığı -> dahili alan (Türkçe/İngilizce, büyük-küçük harf ve boşluk fark etmez)
-  const ALIAS = {
+   const ALIAS = {
     id: ['id', 'kod', 'urunid'], cat: ['kategori', 'category', 'cat'],
     name: ['ad', 'urun', 'urunadi', 'isim', 'name'], weight: ['gramaj', 'agirlik', 'weight'],
-    chip: ['rozet', 'etiket', 'chip'], price: ['fiyat', 'price', 'tutar'],
-    img: ['resim', 'gorsel', 'foto', 'image', 'img'], desc: ['aciklama', 'description', 'detay'],
+    chip: ['rozet', 'chip'],
+    old: ['etiket', 'eskifiyat', 'indirimsizfiyat', 'listefiyati'], // Etiket = indirimsiz (eski) fiyat
+    price: ['fiyat', 'price', 'tutar'],
+    img: ['resim', 'gorsel', 'foto', 'image', 'img'],
+    img2: ['resim2', 'gorsel2', 'foto2', 'image2', 'img2'],
+    img3: ['resim3', 'gorsel3', 'foto3', 'image3', 'img3'],
+    desc: ['aciklama', 'description', 'detay'],
     ing: ['icindekiler', 'icerik', 'ingredients'],
     active: ['aktif', 'yayinda', 'active']
   };
@@ -188,19 +203,43 @@ const IL_ILCE = {
       const id = g('id') || slug(name) || String(n + 1);
       if (seen.has(id)) return;
       seen.add(id);
-      out.push({ id, cat: slug(g('cat')), name, weight: g('weight'), chip: g('chip'), price,
-                img: safeImg(g('img')), desc: g('desc'), ing: g('ing') });
+      const old = parseOldPrice(g('old'));
+      const disc = old > price ? Math.round(((old - price) / old) * 100) : 0;
+      out.push({ id, cat: slug(g('cat')), catLabel: g('cat'), name, weight: g('weight'), chip: g('chip'), price,
+        old: disc >= 1 ? old : 0, disc: disc >= 1 ? disc : 0,
+        img: safeImg(g('img')), img2: safeImg(g('img2')), img3: safeImg(g('img3')),
+        desc: g('desc'), ing: g('ing') });
     });
     return out;
   }
 
+
+    // Etiket (eski fiyat) yalnızca sayı ise geçerlidir (350, 350 TL, 1.250,50); "320g Cam Kavanoz" gibi metinler yok sayılır
+  function parseOldPrice(raw) {
+    return /^\s*\d[\d.,]*\s*(?:tl|₺)?\s*$/i.test(String(raw || '')) ? parsePrice(raw) : NaN;
+  }
  
   /* @pure-end */
 
   const label = (p) => (p.weight ? `${p.name} (${p.weight})` : p.name);
 
+  
+  // Fiyat gösterimi: indirim varsa eski fiyat üstü çizili, güncel fiyat vurgulu
+  const priceInner = (p) => (p.disc ? `<del>${fmt(p.old)}</del><span>${fmt(p.price)}</span>` : fmt(p.price));
+  const priceHTML = (p) => `<span class="price${p.disc ? ' price--sale' : ''}">${priceInner(p)}</span>`;
+
   // Görsel yüklenemezse bozuk simge yerine arka plan görünsün
-  document.addEventListener('error', (e) => { if (e.target.tagName === 'IMG') e.target.style.visibility = 'hidden'; }, true);
+  document.addEventListener('error', (e) => {
+    if (e.target.tagName !== 'IMG') return;
+    const t = e.target.closest('.thumb');
+    if (t) { // bozuk küçük resmi kaldır; 2'den az kalırsa galeriyi gizle
+      const box = t.parentElement;
+      t.remove();
+      if (box.children.length < 2) box.hidden = true;
+      return;
+    }
+    e.target.style.visibility = 'hidden';
+  }, true);
 
   /* ---------- Durum ---------- */
   let PRODUCTS = [];
@@ -253,12 +292,25 @@ const IL_ILCE = {
     } finally { clearTimeout(timer); }
   }
 
+  // Kategori sekmeleri: Sheet'teki benzersiz "Kategori" değerlerinden (trim edilmiş) dinamik oluşur
+  function renderFilters() {
+    const cats = new Map();
+    PRODUCTS.forEach((p) => {
+      if (p.cat && !cats.has(p.cat)) cats.set(p.cat, p.catLabel || CAT_NAMES[p.cat] || p.cat);
+    });
+    $('#filters').innerHTML =
+      `<button type="button" data-f="all" aria-pressed="${filter === 'all'}">Tümü</button>` +
+      Array.from(cats, ([k, l]) => `<button type="button" data-f="${esc(k)}" aria-pressed="${filter === k}">${esc(l)}</button>`).join('');
+  }
+
   function setProducts(list) {
     PRODUCTS = list;
     byId = new Map(list.map((p) => [p.id, p]));
     const before = cart.length;
     cart = cart.filter((i) => byId.has(i.id)); // artık satışta olmayan ürünleri sepetten düş
     if (cart.length !== before) save();
+    if (filter !== 'all' && !list.some((p) => p.cat === filter)) filter = 'all';
+    renderFilters();
     renderGrid();
     render();
   }
@@ -301,7 +353,10 @@ const IL_ILCE = {
     <article class="card">
       <div class="card__img" data-view="${id}">
         ${p.img ? `<img src="${esc(p.img)}" alt="${esc(label(p))}" width="400" height="300" loading="lazy">` : ''}
-        <span class="tag">Yeni Mahsul</span>
+                <div class="card__tags">
+          ${p.disc ? `<span class="disc">%${p.disc} İndirim</span>` : ''}
+          <span class="tag">Yeni Mahsul</span>
+        </div>
       </div>
       <div class="card__body">
         <span class="chip">${esc(p.chip || p.weight || 'Fındık')}</span>
@@ -309,7 +364,7 @@ const IL_ILCE = {
         ${badgeHTML(p, 'badges--sm')}
         <div class="rating" aria-label="5 üzerinden 4,9 puan"><span class="stars" aria-hidden="true">★★★★★</span><b>4.9</b></div>
         <div class="card__bottom">
-          <span class="price">${fmt(p.price)}</span>
+                   ${priceHTML(p)}
           <div class="card__actions">
             <button type="button" class="btn btn--ghost" data-view="${id}">İncele</button>
                         ${addControlHTML(p.id)}
@@ -393,6 +448,19 @@ const IL_ILCE = {
   $('#toastCheckout').addEventListener('click', () => { hideToast(); openDrawer(); });
 
 
+
+    /* ---------- Sepet içi kargo tamamlayıcı öneri ---------- */
+  let upsellId = null;
+
+  // Sepette olmayan ürünlerden önce Ezme kategorisini, yoksa sıradaki ürünü önerir
+  function pickUpsell() {
+    const inCart = new Set(cart.map((i) => i.id));
+    const rest = PRODUCTS.filter((p) => !inCart.has(p.id));
+    return rest.find((p) => p.cat === 'ezme') || rest[0] || null;
+  }
+
+  $('#upsellAdd').addEventListener('click', () => { if (upsellId) addToCart(upsellId, 1, true); });
+
   function render() {
     const { sub, ship, total } = totals();
     const ls = lines();
@@ -443,6 +511,12 @@ const IL_ILCE = {
       $('#topShippingBar').style.width = Math.min(100, Math.floor((sub / FREE_SHIPPING_LIMIT) * 100)) + '%';
       banner.classList.toggle('free', sub >= FREE_SHIPPING_LIMIT);
     }
+
+    // Kargo tamamlayıcı öneri: yalnızca 0 < sepet < limit iken görünür
+    const up = sub > 0 && sub < FREE_SHIPPING_LIMIT ? pickUpsell() : null;
+    upsellId = up ? up.id : null;
+    $('#upsell').hidden = !up;
+    if (up) $('#upsellText').textContent = `Ücretsiz kargo hakkı için sepetinize ${label(up)} (${fmt(up.price)}) eklemek ister misiniz?`;
 
     syncCardControls();
   }
@@ -545,6 +619,33 @@ const IL_ILCE = {
     $('#dAdd').textContent = `Sepete Ekle · ${fmt(p.price * dQty)}`;
   }
 
+  // Ana görsel + (varsa) küçük önizlemeler
+  function setMainImage(src, alt) {
+    const img = $('#dImg');
+    img.style.visibility = '';
+    if (src) { img.src = src; img.alt = alt; img.hidden = false; }
+    else { img.removeAttribute('src'); img.hidden = true; }
+  }
+
+  function buildThumbs(imgs) {
+    const box = $('#dThumbs');
+    if (imgs.length < 2) { box.innerHTML = ''; box.hidden = true; return; } // tek görsel: önizleme alanı yok
+    box.innerHTML = imgs.map((src, i) =>
+      `<button type="button" class="thumb${i === 0 ? ' on' : ''}" data-src="${esc(src)}" aria-label="Görsel ${i + 1}" aria-pressed="${i === 0}"><img src="${esc(src)}" alt="" loading="lazy"></button>`
+    ).join('');
+    box.hidden = false;
+  }
+
+  $('#dThumbs').addEventListener('click', (e) => {
+    const b = e.target.closest('.thumb');
+    if (!b) return;
+    $$('#dThumbs .thumb').forEach((t) => {
+      t.classList.toggle('on', t === b);
+      t.setAttribute('aria-pressed', String(t === b));
+    });
+    setMainImage(b.dataset.src, label(byId.get(dId)));
+  });
+
   function openDetail(id) {
     const p = byId.get(id);
     if (!p) return;
@@ -560,7 +661,21 @@ const IL_ILCE = {
     chip.hidden = !(p.chip || p.weight);
 
     $('#dName').textContent = p.name;
-    $('#dPrice').textContent = fmt(p.price);
+        const imgs = Array.from(new Set([p.img, p.img2, p.img3].filter(Boolean)));
+    setMainImage(imgs[0], label(p));
+    buildThumbs(imgs);
+
+    const dd = $('#dDisc');
+    dd.textContent = p.disc ? `%${p.disc} İndirim` : '';
+    dd.hidden = !p.disc;
+
+    //const chip = $('#dChip');
+   // chip.textContent = p.chip || p.weight;
+   // chip.hidden = !(p.chip || p.weight);
+
+    $('#dName').textContent = p.name;
+    $('#dPrice').innerHTML = priceInner(p);
+    $('#dPrice').classList.toggle('price--sale', !!p.disc);
 
     const desc = $('#dDesc');
     desc.textContent = p.desc;
@@ -672,7 +787,7 @@ const IL_ILCE = {
     cs.textContent = ship ? fmt(ship) : 'Ücretsiz';
     cs.classList.toggle('free', !ship);
     $('#coTotal').textContent = fmt(total);
-    errEl.textContent = '';
+      showStep(1);
     closeDrawer();
     openModal('checkout');
   });
@@ -692,6 +807,88 @@ const IL_ILCE = {
   citySel.addEventListener('change', () => fillDistricts(citySel.value));
   fillDistricts('');
 
+   /* ---------- 2 adımlı sipariş: 1) teslimat bilgileri  2) ödeme seçimi ---------- */
+  const PAY_LABELS = { iban: 'Havale/EFT', kapida: 'Kapıda Ödeme' };
+  let step = 1;
+  let copyTimer = null;
+
+  $('#ibanBank').textContent = IBAN_INFO.bank;
+  $('#ibanHolder').textContent = IBAN_INFO.holder;
+  $('#ibanNo').textContent = IBAN_INFO.iban;
+
+  function showStep(n) {
+    step = n;
+    $('#stepInfo').hidden = n !== 1;
+    $('#stepPay').hidden = n !== 2;
+    $('#coTitle').textContent = n === 1 ? 'Teslimat bilgileri (1/2)' : 'Ödeme seçimi (2/2)';
+    errEl.textContent = '';
+    $('#payErr').textContent = '';
+    const body = $('#checkout .modal__body');
+    if (body) body.scrollTop = 0;
+  }
+
+  function readValues() {
+    const v = {};
+    ['name', 'phone', 'city', 'district', 'address', 'note'].forEach((k) => {
+      v[k] = form.elements[k].value.replace(/\s+/g, ' ').trim();
+    });
+    return v;
+  }
+
+  // 1. adım doğrulaması
+  function readInfo() {
+    errEl.textContent = '';
+    const v = readValues();
+    let bad = null;
+    ['name', 'phone', 'city', 'district', 'address'].forEach((k) => {
+      const el = form.elements[k];
+      const ok = v[k] && el.checkValidity();
+      el.classList.toggle('bad', !ok);
+      if (!ok && !bad) bad = el;
+    });
+    if (!bad && !(has(v.city) && IL_ILCE[v.city].split(',').includes(v.district))) { bad = citySel; citySel.classList.add('bad'); }
+    if (bad) {
+      errEl.textContent = 'Lütfen zorunlu alanları eksiksiz ve doğru doldurun (telefon: 05xx xxx xx xx).';
+      bad.focus();
+      return null;
+    }
+    return v;
+  }
+
+  function goToPay() {
+    if (!readInfo()) return;
+    showStep(2);
+    const first = $('#stepPay input[name="pay"]');
+    if (first) first.focus({ preventScroll: true });
+  }
+
+  $('#toPayBtn').addEventListener('click', goToPay);
+  $('#backBtn').addEventListener('click', () => { showStep(1); form.elements.name.focus({ preventScroll: true }); });
+
+  $$('input[name="pay"]').forEach((r) => r.addEventListener('change', () => {
+    $('#ibanBox').hidden = form.elements.pay.value !== 'iban';
+    $('#payErr').textContent = '';
+  }));
+
+  // IBAN'ı boşluksuz kopyalar (banka uygulamaları için en güvenlisi)
+  $('#ibanCopy').addEventListener('click', async () => {
+    const btn = $('#ibanCopy');
+    const text = IBAN_INFO.iban.replace(/\s+/g, '');
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; }
+    catch (err) { // clipboard API yoksa/izin yoksa eski yöntem
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+      ta.remove();
+    }
+    btn.textContent = ok ? 'Kopyalandı ✓' : 'Kopyalanamadı, IBAN\'ı elle seçin';
+    btn.classList.toggle('copied', ok);
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { btn.textContent = 'IBAN\'ı Kopyala'; btn.classList.remove('copied'); }, 2000);
+  });
+
   /* ---------- WhatsApp mesajı ve yönlendirme ---------- */
   function buildMessage(v) {
     const { sub, ship, total } = totals();
@@ -710,39 +907,26 @@ const IL_ILCE = {
       `*Alıcı:* ${v.name}`,
       `*Telefon:* ${v.phone}`,
       `*Adres:* ${v.address} - ${v.district} / ${v.city}`,
-      `*Not:* ${v.note || '-'}`
+      `*Not:* ${v.note || '-'}`,
+      `*Ödeme Tercihi:* ${v.pay}`
     ].join('\n');
   }
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    errEl.textContent = '';
     if (!lines().length) return;
+    if (step === 1) { goToPay(); return; } // 1. adımda Enter: ödeme adımına geç
 
-    const v = {};
-    ['name', 'phone', 'city', 'district', 'address', 'note'].forEach((k) => {
-      v[k] = form.elements[k].value.replace(/\s+/g, ' ').trim();
-    });
-
-    let bad = null;
-    ['name', 'phone', 'city', 'district', 'address'].forEach((k) => {
-      const el = form.elements[k];
-      const ok = v[k] && el.checkValidity();
-      el.classList.toggle('bad', !ok);
-      if (!ok && !bad) bad = el;
-    });
-    if (!bad && !(has(v.city) && IL_ILCE[v.city].split(',').includes(v.district))) { bad = citySel; citySel.classList.add('bad'); }
-    if (bad) {
-      errEl.textContent = 'Lütfen zorunlu alanları eksiksiz ve doğru doldurun (telefon: 05xx xxx xx xx).';
-      bad.focus();
-      return;
-    }
+    const pay = form.elements.pay.value;
+    if (!pay) { $('#payErr').textContent = 'Lütfen bir ödeme yöntemi seçin.'; return; }
 
     if (!/^\d{10,15}$/.test(WHATSAPP_NO)) {
-      errEl.textContent = 'Sipariş hattı henüz tanımlı değil. script.js içindeki WHATSAPP_NO değerini girin.';
+      $('#payErr').textContent = 'Sipariş hattı henüz tanımlı değil. script.js içindeki WHATSAPP_NO değerini girin.';
       return;
     }
 
+    const v = readValues();
+    v.pay = PAY_LABELS[pay];
     const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_NO}&text=${encodeURIComponent(buildMessage(v))}`;
 
     // Kullanıcı tıklamasıyla aynı anda açılır; engellenirse aynı sekmede devam eder
@@ -753,12 +937,15 @@ const IL_ILCE = {
     commit();
     form.reset();
     fillDistricts('');
+    $('#ibanBox').hidden = true;
+    showStep(1);
     $$('.form .bad').forEach((x) => x.classList.remove('bad'));
     $('#waFallback').href = url;
     closeModal($('#checkout'));
     openModal('sent');
   });
   form.addEventListener('input', (e) => e.target.classList.remove('bad'));
+
 
   
 

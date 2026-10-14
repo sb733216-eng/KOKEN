@@ -383,3 +383,55 @@ body.no-scroll .wa-float{opacity:0;pointer-events:none}
 .announce__bar{flex:1 1 220px;width:auto;min-width:180px;max-width:420px;height:12px;background:rgba(255,255,255,.28)}
 html{scroll-padding-top:200px}
 @media (max-width:860px){html{scroll-padding-top:210px}}
+
+/* ===== Güncelleme: genel ===== */
+:root{--sale:#c2410c}
+[hidden]{display:none!important}
+
+/* ===== İndirim rozeti ve fiyat ===== */
+.card__tags{position:absolute;top:.75rem;left:.75rem;z-index:1;display:flex;flex-direction:column;align-items:flex-start;gap:.35rem}
+.card__tags .tag{position:static}
+.disc{display:inline-block;background:var(--sale);color:var(--white);font-size:.78rem;font-weight:700;letter-spacing:.2px;padding:.25rem .7rem;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.price--sale{display:flex;align-items:baseline;flex-wrap:wrap;gap:.1rem .55rem}
+.price--sale del{font-size:.9rem;font-weight:500;color:var(--muted);text-decoration:line-through}
+.price--sale span{color:var(--sale)}
+.detail__media .disc{position:absolute;top:1rem;left:1rem;z-index:2;font-size:.9rem;padding:.3rem .85rem}
+
+/* ===== Ürün detayı: görsel galerisi ===== */
+.detail__media{display:flex;flex-direction:column;min-height:0}
+.detail__stage{position:relative;flex:1;min-height:360px}
+.detail__stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.thumbs{display:flex;flex-wrap:wrap;gap:.5rem;padding:.6rem;background:var(--white);border-top:1px solid var(--line)}
+.thumb{flex:none;width:64px;height:64px;padding:0;border:2px solid transparent;border-radius:10px;overflow:hidden;background:var(--cream);opacity:.75;transition:opacity .2s,border-color .2s}
+.thumb:hover{opacity:1}
+.thumb.on{border-color:var(--green);opacity:1}
+.detail__media .thumb img{position:static;inset:auto;display:block;width:100%;height:100%;object-fit:cover}
+@media (max-width:700px){
+  .detail__media{aspect-ratio:auto}
+  .detail__stage{flex:none;min-height:0;aspect-ratio:4/3}
+}
+
+/* ===== Sepet içi öneri ===== */
+.upsell{display:grid;gap:.6rem;padding:.8rem 1.3rem;background:var(--brown-s);border-bottom:1px solid var(--line)}
+.upsell p{font-size:.88rem;line-height:1.45}
+.upsell .btn{justify-self:start;padding:.55rem 1rem;font-size:.9rem}
+
+/* ===== 2 adımlı sipariş: ödeme seçimi ===== */
+.form .form{gap:1rem}
+.paychoice{margin:0;padding:0;border:0;display:grid;gap:.6rem}
+.paychoice legend{padding:0;margin-bottom:.4rem;font-size:.85rem;font-weight:600}
+.form .radio{flex-direction:row;align-items:center;gap:.7rem;padding:.85rem 1rem;background:var(--white);border:1.5px solid var(--line);border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer;transition:border-color .2s,background .2s}
+.form .radio:hover{border-color:var(--green)}
+.form .radio:has(input:checked){border-color:var(--green);background:var(--green-s)}
+.form .radio input{flex:none;width:20px;height:20px;padding:0;border:0;accent-color:var(--green)}
+.iban{display:grid;gap:.8rem;padding:1rem;background:var(--white);border:1.5px dashed var(--green);border-radius:12px}
+.iban dl{margin:0;display:grid;gap:.45rem}
+.iban dl div{display:grid;grid-template-columns:6rem 1fr;gap:.6rem;font-size:.92rem}
+.iban dt{color:var(--muted)}
+.iban dd{margin:0;font-weight:600;word-break:break-word}
+.iban .iban__no{letter-spacing:.04em}
+.iban .btn{justify-self:start}
+.btn--ghost.copied{background:var(--green);color:var(--white)}
+.step-actions{display:grid;grid-template-columns:1fr 1.7fr;gap:.6rem}
+.step-actions .btn{padding:.9rem .8rem}
+@media (max-width:420px){.step-actions{grid-template-columns:1fr}}
