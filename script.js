@@ -123,9 +123,14 @@ const IL_ILCE = {
 
 /* ============================================================================== */
 
+
+
 (() => {
   'use strict';
 
+  // Alt sayfalarda (ürün vitrini yok) mağaza kodu çalışmasın
+ 
+  
   const KEY = 'koken-findik-cart';
   const MAX_QTY = 99;
   const SEP = '--------------------------------';
@@ -235,7 +240,11 @@ const IL_ILCE = {
     if (t) { // bozuk küçük resmi kaldır; 2'den az kalırsa galeriyi gizle
       const box = t.parentElement;
       t.remove();
-      if (box.children.length < 2) box.hidden = true;
+            if (box.children.length < 2) {
+        box.hidden = true;
+        const st = document.querySelector('.detail__stage');
+        if (st) st.classList.remove('is-gallery');
+      }
       return;
     }
     e.target.style.visibility = 'hidden';
@@ -516,8 +525,7 @@ const IL_ILCE = {
     const up = sub > 0 && sub < FREE_SHIPPING_LIMIT ? pickUpsell() : null;
     upsellId = up ? up.id : null;
     $('#upsell').hidden = !up;
-    if (up) $('#upsellText').textContent = `Ücretsiz kargo hakkı için sepetinize ${label(up)} (${fmt(up.price)}) eklemek ister misiniz?`;
-
+      if (up) $('#upsellText').innerHTML = `<span class="upsell__lead">Ücretsiz kargo hakkı için sepete</span> <strong class="upsell__name">${esc(label(up))}</strong> <span class="upsell__price">${fmt(up.price)}</span> <span class="upsell__lead">eklemek ister misiniz?</span>`;
     syncCardControls();
   }
 
@@ -629,6 +637,7 @@ const IL_ILCE = {
 
   function buildThumbs(imgs) {
     const box = $('#dThumbs');
+    $('.detail__stage').classList.toggle('is-gallery', imgs.length > 1); // imleç ipucu yalnızca çoklu görselde
     if (imgs.length < 2) { box.innerHTML = ''; box.hidden = true; return; } // tek görsel: önizleme alanı yok
     box.innerHTML = imgs.map((src, i) =>
       `<button type="button" class="thumb${i === 0 ? ' on' : ''}" data-src="${esc(src)}" aria-label="Görsel ${i + 1}" aria-pressed="${i === 0}"><img src="${esc(src)}" alt="" loading="lazy"></button>`
@@ -636,14 +645,26 @@ const IL_ILCE = {
     box.hidden = false;
   }
 
+  // Tek noktadan seçim: ana görsel + aktif küçük resim her zaman birlikte güncellenir
+  function selectThumb(t) {
+    $$('#dThumbs .thumb').forEach((x) => {
+      x.classList.toggle('on', x === t);
+      x.setAttribute('aria-pressed', String(x === t));
+    });
+    setMainImage(t.dataset.src, label(byId.get(dId)));
+  }
+
   $('#dThumbs').addEventListener('click', (e) => {
     const b = e.target.closest('.thumb');
-    if (!b) return;
-    $$('#dThumbs .thumb').forEach((t) => {
-      t.classList.toggle('on', t === b);
-      t.setAttribute('aria-pressed', String(t === b));
-    });
-    setMainImage(b.dataset.src, label(byId.get(dId)));
+    if (b) selectThumb(b);
+  });
+
+  // Büyük görsele tıklayınca sıradaki görsele geç (sondan sonra başa döner)
+  $('.detail__stage').addEventListener('click', () => {
+    const ts = $$('#dThumbs .thumb');
+    if (ts.length < 2) return;
+    const i = ts.findIndex((x) => x.classList.contains('on'));
+    selectThumb(ts[(i + 1) % ts.length]);
   });
 
   function openDetail(id) {

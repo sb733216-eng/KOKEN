@@ -331,13 +331,7 @@ body:has(.drawer.on) .wa-island{right:calc(min(420px,100%) + 1.2rem)}
   .back-link{padding:.45rem .75rem;font-size:.85rem}
 }
 
-/* ===== Global: yüzen WhatsApp butonu (tüm sayfalar) ===== */
-.wa-float{position:fixed;bottom:20px;right:20px;z-index:1000;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s,opacity .2s}
-.wa-float:hover{transform:scale(1.08);box-shadow:0 10px 24px rgba(0,0,0,.32)}
-.wa-float svg{width:30px;height:30px;fill:currentColor}
-/* Sepet/modal açıkken butonların üstünü kapatmasın (ana sayfa) */
-body.no-scroll .wa-float{opacity:0;pointer-events:none}
-@media (max-width:768px){.wa-float{bottom:80px}}
+
 
 /* ===== Kart üzeri durumsal adet butonu ===== */
 .qty-control{display:flex;align-items:center;justify-content:space-between;gap:.2rem;min-height:44px;padding:.2rem;background:var(--green);color:var(--white);border-radius:999px}
@@ -345,13 +339,7 @@ body.no-scroll .wa-float{opacity:0;pointer-events:none}
 .qty-control button:hover{background:rgba(255,255,255,.32)}
 .qty-control span{flex:1;text-align:center;font-weight:700;font-size:.95rem}
 
-/* ===== Global: yüzen WhatsApp butonu (tüm sayfalar) ===== */
-.wa-float{position:fixed;bottom:20px;right:20px;z-index:1000;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s,opacity .2s}
-.wa-float:hover{transform:scale(1.08);box-shadow:0 10px 24px rgba(0,0,0,.32)}
-.wa-float svg{width:30px;height:30px;fill:currentColor}
-/* Sepet/modal açıkken butonların üstünü kapatmasın (ana sayfa) */
-body.no-scroll .wa-float{opacity:0;pointer-events:none}
-@media (max-width:768px){.wa-float{bottom:80px}}
+
 
 /* ===== Kart üzeri durumsal adet butonu ===== */
 .qty-control{display:flex;align-items:center;justify-content:space-between;gap:.2rem;min-height:44px;padding:.2rem;background:var(--green);color:var(--white);border-radius:999px}
@@ -435,3 +423,25 @@ html{scroll-padding-top:200px}
 .step-actions{display:grid;grid-template-columns:1fr 1.7fr;gap:.6rem}
 .step-actions .btn{padding:.9rem .8rem}
 @media (max-width:420px){.step-actions{grid-template-columns:1fr}}
+
+
+/* ===== Galeri: büyük görsel tıklanabilir ===== */
+.detail__stage.is-gallery,.detail__stage.is-gallery img{cursor:pointer}
+.thumb{cursor:pointer}
+
+/* ===== Sepet içi öneri kutusu: dikkat çekici ===== */
+.upsell{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-left:4px solid #16a34a;border-bottom:1px solid #bbf7d0}
+.upsell p{font-size:.9rem;color:#14532d}
+.upsell__name{font-weight:800;color:#14532d}
+.upsell__price{display:inline-block;padding:.05rem .55rem;background:#16a34a;color:#fff;border-radius:999px;font-size:.82rem;font-weight:700;white-space:nowrap}
+.upsell .btn{background:#16a34a;color:#fff;box-shadow:0 6px 16px rgba(22,163,74,.45);animation:upsellPulse 1.8s ease-in-out infinite}
+.upsell .btn:hover{background:#15803d;animation-play-state:paused}
+@keyframes upsellPulse{
+  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(22,163,74,.55),0 6px 16px rgba(22,163,74,.45)}
+  50%{transform:scale(1.05);box-shadow:0 0 0 10px rgba(22,163,74,0),0 8px 20px rgba(34,197,94,.6)}
+}
+
+/* ===== Sepet içi öneri: düzen ve fiyat rozeti düzeltmesi ===== */
+.upsell{display:flex;flex-direction:column;gap:8px}
+.upsell .btn{align-self:flex-start}
+.upsell__price{display:inline-block;width:auto;height:auto;padding:4px 8px;border-radius:6px;background:rgba(22,163,74,.1);color:#15803d;font-weight:700;font-size:.85rem;line-height:1.3;white-space:nowrap;vertical-align:baseline}
