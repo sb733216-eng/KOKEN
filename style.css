@@ -550,3 +550,12 @@ h4{font-size:var(--step-0);font-weight:var(--fw-semibold)}
   .mbar__ic svg{display:block;width:100%;height:100%}
   @media (max-width:360px){.mbar{gap:6px;padding-inline:8px}.mbar__btn{gap:5px;padding-inline:5px;font-size:.68rem}}
 }
+
+/* ===== Yüzen WhatsApp butonu ===== */
+.wa-island{position:fixed;right:20px;bottom:20px;z-index:1000;display:grid;place-items:center;width:56px;height:56px;padding:0;background:#25D366;color:#fff;border:0;border-radius:50%;box-shadow:0 6px 18px rgba(0,0,0,.24);transition:transform .2s ease,box-shadow .2s ease}
+.wa-island svg{display:block;width:29px;height:29px;fill:currentColor}
+.wa-island:hover{transform:scale(1.08);box-shadow:0 9px 24px rgba(0,0,0,.3)}
+.wa-island:active{transform:scale(.96)}
+.wa-island:focus-visible{outline:3px solid #166534;outline-offset:3px}
+@media (max-width:768px){.wa-island{bottom:80px;right:16px}}
+@media (prefers-reduced-motion:reduce){.wa-island{transition:none}}
