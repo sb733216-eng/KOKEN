@@ -10,6 +10,38 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script type="application/ld+json" id="ldBusiness">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "@id": "https://kokenfindik.com/#isletme",
+  "name": "Köken Fındık",
+  "description": "Ordu'da kırma, kavurma, ezme ve paketleme yapan taze Karadeniz fındığı üreticisi.",
+  "url": "https://kokenfindik.com/",
+  "logo": "https://kokenfindik.com/logo.jpg",
+  "image": "https://kokenfindik.com/hero.jpg",
+  "telephone": "+905313385955",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Kökenli, Tokat Ordu Yolu No:34",
+    "addressLocality": "Altınordu",
+    "addressRegion": "Ordu",
+    "postalCode": "52000",
+    "addressCountry": "TR"
+  },
+  "areaServed": "TR",
+  "knowsAbout": ["Karadeniz fındığı", "kavrulmuş iç fındık", "fındık ezmesi"]
+}
+</script>
+<script type="application/ld+json" id="ldProducts">
+[
+  {"@context":"https://schema.org","@type":"Product","name":"Taze Kavrulmuş İç Fındık (500g)","sku":"1","description":"Karadeniz fındığının kendi tesisimizde taze kavrulmuş iç hali.","image":["https://www.ALAN-ADINIZ.com/kavrulmus.jpg"],"brand":{"@type":"Brand","name":"Köken Fındık"},"offers":{"@type":"Offer","priceCurrency":"TRY","price":"250","availability":"https://schema.org/InStock","itemCondition":"https://schema.org/NewCondition","url":"https://www.ALAN-ADINIZ.com/#urunler"}},
+  {"@context":"https://schema.org","@type":"Product","name":"Çifte Kavrulmuş Fındık (1 kg)","sku":"3","description":"İki aşamalı kavurma ile daha derin aroma ve belirgin çıtırlık.","image":["https://www.ALAN-ADINIZ.com/cifte-kavrulmus.jpg"],"brand":{"@type":"Brand","name":"Köken Fındık"},"offers":{"@type":"Offer","priceCurrency":"TRY","price":"480","availability":"https://schema.org/InStock","itemCondition":"https://schema.org/NewCondition","url":"https://www.ALAN-ADINIZ.com/#urunler"}},
+  {"@context":"https://schema.org","@type":"Product","name":"Şekersiz Doğal Fındık Ezmesi (320g)","sku":"2","description":"Doğal fındık ezmesi, 320 g cam kavanozda.","image":["https://www.ALAN-ADINIZ.com/ezme.jpg"],"brand":{"@type":"Brand","name":"Köken Fındık"},"offers":{"@type":"Offer","priceCurrency":"TRY","price":"190","availability":"https://schema.org/InStock","itemCondition":"https://schema.org/NewCondition","url":"https://www.ALAN-ADINIZ.com/#urunler"}},
+  {"@context":"https://schema.org","@type":"Product","name":"Çiğ İç Fındık (500g)","sku":"4","description":"Kavrulmamış, çiğ iç fındık.","image":["https://www.ALAN-ADINIZ.com/cig.jpg"],"brand":{"@type":"Brand","name":"Köken Fındık"},"offers":{"@type":"Offer","priceCurrency":"TRY","price":"230","availability":"https://schema.org/InStock","itemCondition":"https://schema.org/NewCondition","url":"https://www.ALAN-ADINIZ.com/#urunler"}},
+  {"@context":"https://schema.org","@type":"Product","name":"Vakumlu Paket Lüks Karışık Fındık (1 kg)","sku":"5","description":"Taze kalması için vakumlu paketlenmiş lüks karışık fındık.","image":["https://www.ALAN-ADINIZ.com/paket.jpg"],"brand":{"@type":"Brand","name":"Köken Fındık"},"offers":{"@type":"Offer","priceCurrency":"TRY","price":"520","availability":"https://schema.org/InStock","itemCondition":"https://schema.org/NewCondition","url":"https://www.ALAN-ADINIZ.com/#urunler"}}
+]
+</script>
 </head>
 <body>
 
@@ -22,8 +54,8 @@
 
 <header class="header">
   <div class="container header__inner">
-    <a href="#" class="brand" aria-label="Köken Fındık ana sayfa">
-      <img class="brand__logo" src="logo.jpg" alt="" width="56" height="56">
+    <a href="#" class="brand">
+      <img class="brand__logo" src="logo.jpg" alt="Köken Fındık logosu" width="56" height="56">
       <span class="brand__text">
         <span class="brand__name">Köken Fındık</span>
         <span class="brand__slogan">Fındığın Kökünden Gelen Lezzet</span>
@@ -65,8 +97,32 @@
 
   <section class="products" id="urunler">
     <div class="container">
-      <h2>Ürünlerimiz</h2>
+      <h1>Ürünlerimiz</h1>
       <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+    <section class="faq-section" id="sss" aria-labelledby="sssTitle">
+    <div class="container">
+      <h2 id="sssTitle">Karadeniz Fındığı Hakkında Sık Sorulan Sorular</h2>
+      <div class="faq faq--home" id="homeFaq">
+        <div class="faq__item">
+          <button type="button" class="faq__q" id="hq1" aria-expanded="false" aria-controls="ha1">Kargo ücreti ve teslimat süresi nedir?<span class="faq__ic" aria-hidden="true"></span></button>
+          <div class="faq__a" id="ha1" role="region" aria-labelledby="hq1"><div><p>750 TL ve üzeri siparişlerde kargo ücretsizdir; altındaki siparişlere 60 TL kargo ücreti eklenir. Saat 14:00'e kadar verilen siparişler aynı gün kargoya teslim edilir. Teslimat süresi bulunduğunuz bölgeye göre değişir. Ayrıntılar için <a href="teslimat-ve-kargo.html">Teslimat ve Kargo</a> sayfasına bakabilirsiniz.</p></div></div>
+        </div>
+        <div class="faq__item">
+          <button type="button" class="faq__q" id="hq2" aria-expanded="false" aria-controls="ha2">İade ve iptal koşulları nelerdir?<span class="faq__ic" aria-hidden="true"></span></button>
+          <div class="faq__a" id="ha2" role="region" aria-labelledby="hq2"><div><p>Ambalajı açılmamış, mühürlü ürünleri teslim aldığınız tarihten itibaren 14 gün içinde iade edebilirsiniz. Gıda güvenliği gereği ambalajı açılmış ürünler iade edilemez. Paketi kargo görevlisinin yanında kontrol edin; hasar varsa hasar tespit tutanağı düzenletin, hasarlı ürünler yenilenir. Ayrıntılar için <a href="iptal-ve-iade.html">İptal ve İade</a> sayfasına bakınız.</p></div></div>
+        </div>
+        <div class="faq__item">
+          <button type="button" class="faq__q" id="hq3" aria-expanded="false" aria-controls="ha3">Tazelik garantisi nasıl sağlanıyor?<span class="faq__ic" aria-hidden="true"></span></button>
+          <div class="faq__a" id="ha3" role="region" aria-labelledby="hq3"><div><p>Fındıklarımızı haftalık taze üretim döngüsüyle kırıyor, kavuruyor ve siparişinize göre paketliyoruz. Ürünler özel korumalı ambalajla gönderilir. Serin ve kuru bir yerde, 18-25°C'de saklandığında tazeliğini 12 ay korur.</p></div></div>
+        </div>
+        <div class="faq__item">
+          <button type="button" class="faq__q" id="hq4" aria-expanded="false" aria-controls="ha4">Hangi ödeme yöntemlerini kabul ediyorsunuz?<span class="faq__ic" aria-hidden="true"></span></button>
+          <div class="faq__a" id="ha4" role="region" aria-labelledby="hq4"><div><p>Siparişinizi WhatsApp üzerinden onaylarsınız. Ödemeyi Havale / EFT (IBAN) ile ya da kapıda ödeme seçeneğiyle yapabilirsiniz. Ödeme yöntemini sipariş sırasında ödeme adımında seçersiniz.</p></div></div>
+        </div>
+      </div>
     </div>
   </section>
 </main>
@@ -90,7 +146,7 @@
 </section>
 <div class="container footer__inner">
     <div>
-      <h4>Kurumsal</h4>
+      <h2 class="footer__title">Kurumsal</h2>
       <ul>
         <li><a href="hakkimizda.html">Hakkımızda</a></li>
         <li><a href="uretim-tesisimiz.html">Üretim Tesisimiz</a></li>
@@ -117,7 +173,7 @@
       <address>
         <p>Adres: Kökenli, Tokat Ordu Yolu No:34, 52000 Altınordu/Ordu</p>
         <p>Telefon: <a href="tel:+905313385955">0531 338 59 55</a></p>
-        <p>WhatsApp Hattı: <a href="https://wa.me/905313385955" target="_blank" rel="noopener">0531 338 59 55</a></p>
+        <a href="https://api.whatsapp.com/send?phone=905313385955" target="_blank" rel="noopener noreferrer">0531 338 59 55</a>
       </address>
     </div>
   </div>
@@ -160,7 +216,7 @@
         <div id="stepInfo">
           <div class="form">
             <label>Ad Soyad *<input name="name" autocomplete="name" required minlength="3" maxlength="80"></label>
-            <label>Telefon Numarası *<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="05xx xxx xx xx" pattern="^(\+90|0)?\s?5\d{2}\s?\d{3}\s?\d{2}\s?\d{2}$" title="Örnek: 05xx xxx xx xx"></label>
+          <label>Telefon Numarası * <small>(05XXXXXXXXX)</small><input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" required maxlength="11" placeholder="05313385955" pattern="^05\d{9}$" title="05 ile başlayan 11 haneli telefon numarası (örn. 05556457857)"></label>
             <div class="two">
               <label>İl *<select name="city" required autocomplete="address-level1"><option value="">İl seçin</option></select></label>
               <label>İlçe *<select name="district" required disabled autocomplete="address-level2"><option value="">Önce il seçin</option></select></label>
@@ -212,7 +268,7 @@
       <div class="ok__icon">✓</div>
       <h3 id="sentTitle">Siparişiniz WhatsApp'a aktarıldı</h3>
       <p>Sipariş özeti mesaj olarak hazırlandı. Siparişinizin bize ulaşması için WhatsApp'ta <strong>Gönder</strong> tuşuna basmayı unutmayın.</p>
-      <p class="ok__fb">WhatsApp açılmadıysa <a id="waFallback" href="#" target="_blank" rel="noopener">buraya tıklayın</a>.</p>
+      <p class="ok__fb">WhatsApp açılmadıysa <a id="waFallback" href="#" target="_blank" rel="noopener noreferrer">buraya tıklayın</a>.</p>
       <button type="button" class="btn btn--primary btn--block" data-close>Alışverişe devam et</button>
     </div>
   </div>
@@ -226,7 +282,7 @@
     <div class="detail">
   <div class="detail__media">
         <div class="detail__stage">
-          <img id="dImg" alt="" width="640" height="640">
+          <img id="dImg" alt="Köken Fındık ürün görseli" width="640" height="640">
           <span class="disc" id="dDisc" hidden></span>
           <span class="chip" id="dChip"></span>
         </div>
@@ -282,6 +338,11 @@
   <span class="toast__timer" aria-hidden="true"></span>
 </div>
 
+<nav class="mbar" aria-label="Hızlı işlemler">
+  <button type="button" class="mbar__btn mbar__btn--primary" id="mbarCart"><span class="mbar__ic" aria-hidden="true">🛒</span><span>Sepet (<b id="mbarCount">0</b>) · <b id="mbarTotal">0 TL</b></span></button>
+  <a class="mbar__btn" href="https://api.whatsapp.com/send?phone=905313385955&amp;text=Merhaba%2C%20%C3%BCr%C3%BCnleriniz%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener noreferrer"><span class="mbar__ic" aria-hidden="true">💬</span><span>WhatsApp</span></a>
+  <a class="mbar__btn" href="tel:+905313385955"><span class="mbar__ic" aria-hidden="true">📞</span><span>Ara</span></a>
+</nav>
 
 <script src="script.js" defer></script>
 </body>

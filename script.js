@@ -123,7 +123,20 @@ const IL_ILCE = {
 
 /* ============================================================================== */
 
-
+// ---- WhatsApp bağlantılarını WHATSAPP_NO'dan günceller (evrensel api.whatsapp.com biçimi) ----
+// wa.me veya api.whatsapp.com/send ile başlayan her bağlantı güncellenir; ?text= korunur, yeni sekmede güvenli açılır.
+(function syncWhatsAppLinks() {
+  if (!/^\d{10,15}$/.test(WHATSAPP_NO)) return;
+  const pretty = WHATSAPP_NO.replace(/^90(\d{3})(\d{3})(\d{2})(\d{2})$/, '0$1 $2 $3 $4');
+  document.querySelectorAll('a[href*="wa.me/"], a[href*="api.whatsapp.com/send"]').forEach((a) => {
+    let text = '';
+    try { text = new URL(a.getAttribute('href'), location.href).searchParams.get('text') || ''; } catch (e) { /* yok say */ }
+    a.href = `https://api.whatsapp.com/send?phone=${WHATSAPP_NO}` + (text ? `&text=${encodeURIComponent(text)}` : '');
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    if (/^\+?[\d\s]{10,}$/.test(a.textContent.trim())) a.textContent = pretty === WHATSAPP_NO ? '+' + WHATSAPP_NO : pretty;
+  });
+})();
 
 (() => {
   'use strict';
@@ -301,6 +314,36 @@ const IL_ILCE = {
     } finally { clearTimeout(timer); }
   }
 
+
+    // SEO: JSON-LD (Product) güncel katalogdan üretilir; LocalBusiness'taki alan adı yer tutucusu yayındaki adrese çevrilir
+  function updateSchema() {
+    const abs = (u) => { try { return new URL(u, location.href).href; } catch (e) { return undefined; } };
+    const prod = $('#ldProducts');
+    if (prod) {
+      prod.textContent = JSON.stringify(PRODUCTS.map((p) => ({
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: label(p),
+        sku: p.id,
+        description: p.desc || `${p.name} - Köken Fındık`,
+        image: [p.img, p.img2, p.img3].filter(Boolean).map(abs).filter(Boolean),
+        brand: { '@type': 'Brand', name: 'Köken Fındık' },
+        category: p.catLabel || CAT_NAMES[p.cat] || 'Fındık',
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'TRY',
+          price: String(p.price),
+          availability: 'https://schema.org/InStock',
+          itemCondition: 'https://schema.org/NewCondition',
+          url: abs('#urunler')
+        }
+      })));
+    }
+    const biz = $('#ldBusiness');
+    if (biz && /^https?:$/.test(location.protocol)) biz.textContent = biz.textContent.split('https://www.ALAN-ADINIZ.com').join(location.origin);
+  }
+
+
   // Kategori sekmeleri: Sheet'teki benzersiz "Kategori" değerlerinden (trim edilmiş) dinamik oluşur
   function renderFilters() {
     const cats = new Map();
@@ -322,6 +365,8 @@ const IL_ILCE = {
     renderFilters();
     renderGrid();
     render();
+    updateSchema();
+
   }
 
 
@@ -361,7 +406,7 @@ const IL_ILCE = {
     return `
     <article class="card">
       <div class="card__img" data-view="${id}">
-        ${p.img ? `<img src="${esc(p.img)}" alt="${esc(label(p))}" width="400" height="300" loading="lazy">` : ''}
+        ${p.img ? `<img src="${esc(p.img)}" alt="${esc(label(p))} - Köken Fındık ürünü" width="400" height="300" loading="lazy">` : ''}
                 <div class="card__tags">
           ${p.disc ? `<span class="disc">%${p.disc} İndirim</span>` : ''}
           <span class="tag">Yeni Mahsul</span>
@@ -507,6 +552,11 @@ const IL_ILCE = {
     const badge = $('#cartCount');
     badge.textContent = count();
     badge.classList.toggle('on', count() > 0);
+
+    
+    // Mobil alt çubuk
+    $('#mbarCount').textContent = count();
+    $('#mbarTotal').textContent = fmt(total);
     $('#checkoutBtn').disabled = !ls.length;
 
     
@@ -569,6 +619,7 @@ const IL_ILCE = {
   function closeModal(m) { m.classList.remove('on'); m.setAttribute('aria-hidden', 'true'); lock(); }
 
   $('#openCart').addEventListener('click', openDrawer);
+    $('#mbarCart').addEventListener('click', openDrawer);
   $('#closeCart').addEventListener('click', closeDrawer);
   overlay.addEventListener('click', closeDrawer);
   document.addEventListener('click', (e) => {
@@ -616,6 +667,15 @@ const IL_ILCE = {
     b.setAttribute('aria-expanded', String(open));
   });
 
+    // Ana sayfa SSS akordiyonu
+  $('#homeFaq').addEventListener('click', (e) => {
+    const b = e.target.closest('.faq__q');
+    if (!b) return;
+    const item = b.parentElement;
+    const open = !item.classList.contains('open');
+    item.classList.toggle('open', open);
+    b.setAttribute('aria-expanded', String(open));
+  });
 
   /* ---------- Ürün detay modalı ---------- */
   let dId = null, dQty = 1;
@@ -635,12 +695,12 @@ const IL_ILCE = {
     else { img.removeAttribute('src'); img.hidden = true; }
   }
 
-  function buildThumbs(imgs) {
+  function buildThumbs(imgs, name) {
     const box = $('#dThumbs');
     $('.detail__stage').classList.toggle('is-gallery', imgs.length > 1); // imleç ipucu yalnızca çoklu görselde
     if (imgs.length < 2) { box.innerHTML = ''; box.hidden = true; return; } // tek görsel: önizleme alanı yok
     box.innerHTML = imgs.map((src, i) =>
-      `<button type="button" class="thumb${i === 0 ? ' on' : ''}" data-src="${esc(src)}" aria-label="Görsel ${i + 1}" aria-pressed="${i === 0}"><img src="${esc(src)}" alt="" loading="lazy"></button>`
+      `<button type="button" class="thumb${i === 0 ? ' on' : ''}" data-src="${esc(src)}" aria-label="Görsel ${i + 1}" aria-pressed="${i === 0}"><img src="${esc(src)}" alt="${esc(name)} - görsel ${i + 1}" loading="lazy"></button>`
     ).join('');
     box.hidden = false;
   }
@@ -684,7 +744,7 @@ const IL_ILCE = {
     $('#dName').textContent = p.name;
         const imgs = Array.from(new Set([p.img, p.img2, p.img3].filter(Boolean)));
     setMainImage(imgs[0], label(p));
-    buildThumbs(imgs);
+    buildThumbs(imgs, label(p));
 
     const dd = $('#dDisc');
     dd.textContent = p.disc ? `%${p.disc} İndirim` : '';
@@ -833,6 +893,21 @@ const IL_ILCE = {
   let step = 1;
   let copyTimer = null;
 
+
+    // Telefon: yalnızca rakam, en fazla 11 hane (05XXXXXXXXX)
+  const phoneEl = form.elements.phone;
+  phoneEl.addEventListener('input', () => {
+    const clean = phoneEl.value.replace(/\D/g, '').slice(0, 11);
+    if (phoneEl.value !== clean) phoneEl.value = clean;
+  });
+  phoneEl.addEventListener('paste', (e) => {
+    e.preventDefault();
+    let d = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\D/g, '');
+    if (d.length === 12 && d.startsWith('90')) d = '0' + d.slice(2); // +90 5xx... -> 05xx...
+    phoneEl.value = d.slice(0, 11);
+    phoneEl.classList.remove('bad');
+  });
+
   $('#ibanBank').textContent = IBAN_INFO.bank;
   $('#ibanHolder').textContent = IBAN_INFO.holder;
   $('#ibanNo').textContent = IBAN_INFO.iban;
@@ -869,7 +944,9 @@ const IL_ILCE = {
     });
     if (!bad && !(has(v.city) && IL_ILCE[v.city].split(',').includes(v.district))) { bad = citySel; citySel.classList.add('bad'); }
     if (bad) {
-      errEl.textContent = 'Lütfen zorunlu alanları eksiksiz ve doğru doldurun (telefon: 05xx xxx xx xx).';
+            errEl.textContent = bad === form.elements.phone
+        ? 'Telefon numarası 05 ile başlayan 11 haneli olmalıdır (örn. 05313385955). Harf ve özel karakter kullanmayın.'
+        : 'Lütfen zorunlu alanları eksiksiz ve doğru doldurun.';
       bad.focus();
       return null;
     }
