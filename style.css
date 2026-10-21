@@ -565,3 +565,5 @@ h4{font-size:var(--step-0);font-weight:var(--fw-semibold)}
 .wa-island{width:56px;height:56px;padding:0;background-color:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;position:fixed;bottom:25px;right:25px;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .wa-island svg{width:30px;height:30px;display:block;fill:white}
 @media (max-width:768px){.wa-island{display:none!important}}
+
+@media (max-width:768px){.mbar{grid-template-columns:repeat(2,minmax(0,1fr));justify-content:center}}
