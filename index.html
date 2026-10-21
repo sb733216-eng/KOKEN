@@ -79,19 +79,56 @@
 </div>
 
 <main>
-  <section class="hero">
-    <div class="container hero__grid">
-      <div class="hero__text">
-        <h1>Doğadan Sofranıza Taze Karadeniz Fındığı</h1>
-        <p>Bahçeden gelen fındığı kendi tesisimizde işliyor, siparişinize göre paketliyoruz. Siparişinizi WhatsApp'tan saniyeler içinde iletin.</p>
-        <ul class="trust" aria-label="Üretim aşamaları">
-          <li>🔨 Kırma</li><li>🔥 Kavurma</li><li>🫙 Ezme</li><li>📦 Paketleme</li>
-        </ul>
-        <a href="#urunler" class="btn btn--light">Ürünleri Gör</a>
+  <section class="hero" aria-label="Öne çıkanlar">
+    <div class="hero__viewport">
+      <div class="hero__track" id="heroTrack">
+        <article class="hero__slide" aria-hidden="false">
+          <div class="container hero__grid">
+            <div class="hero__text">
+              <h1>Doğadan Sofranıza Taze Karadeniz Fındığı</h1>
+              <p>Bahçeden gelen fındığı kendi tesisimizde işliyor, siparişinize göre paketliyoruz. Siparişinizi WhatsApp'tan saniyeler içinde iletin.</p>
+              <ul class="trust" aria-label="Üretim aşamaları">
+                <li>🔨 Kırma</li><li>🔥 Kavurma</li><li>🫙 Ezme</li><li>📦 Paketleme</li>
+              </ul>
+              <a href="#urunler" class="btn btn--light">Ürünleri Gör</a>
+            </div>
+            <div class="hero__media">
+              <img src="hero.jpg" alt="Taze Karadeniz fındığı" width="640" height="480">
+            </div>
+          </div>
+        </article>
+        <article class="hero__slide" aria-hidden="true">
+          <div class="container hero__grid">
+            <div class="hero__text">
+              <h1>%100 Doğal Karadeniz Fındık Ezmesi</h1>
+              <p>Sadece fındık ve pancar şekeri. Katkısız, koruyucusuz gurme lezzet.</p>
+              <a href="#urunler" class="btn btn--light">Ezme Çeşitlerini İncele</a>
+            </div>
+            <div class="hero__media">
+              <img src="ezme.jpg" alt="Doğal Karadeniz fındık ezmesi" width="640" height="480">
+            </div>
+          </div>
+        </article>
+        <article class="hero__slide" aria-hidden="true">
+          <div class="container hero__grid">
+            <div class="hero__text">
+              <h1>750 TL Üzeri Siparişlerde Kargo Ücretsiz</h1>
+              <p>Haftalık taze kavrum. Kırılma garantili özel muhafazalı ambalaj.</p>
+              <a href="#urunler" class="btn btn--light">Hemen Sipariş Ver</a>
+            </div>
+            <div class="hero__media">
+              <img src="paket.jpg" alt="Özenle paketlenmiş taze fındık siparişi" width="640" height="480">
+            </div>
+          </div>
+        </article>
       </div>
-      <div class="hero__media">
-        <img src="hero.jpg" alt="Taze Karadeniz fındığı" width="640" height="480">
-      </div>
+    </div>
+    <button type="button" class="hero-arrow hero-prev" aria-label="Önceki slayt">‹</button>
+    <button type="button" class="hero-arrow hero-next" aria-label="Sonraki slayt">›</button>
+    <div class="hero-dots" aria-label="Slayt seçimi">
+      <button type="button" aria-label="1. slayt" aria-current="true"></button>
+      <button type="button" aria-label="2. slayt" aria-current="false"></button>
+      <button type="button" aria-label="3. slayt" aria-current="false"></button>
     </div>
   </section>
 
