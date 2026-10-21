@@ -1101,6 +1101,10 @@ const IL_ILCE = {
   document.addEventListener('visibilitychange', startAuto);
 
   hero.addEventListener('pointerdown', (event) => {
+    if (event.target.closest('.trust')) {
+      pointerStartX = null;
+      return;
+    }
     pointerStartX = event.clientX;
   }, { passive: true });
   hero.addEventListener('pointerup', (event) => {
