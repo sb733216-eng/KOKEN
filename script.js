@@ -409,7 +409,7 @@ const IL_ILCE = {
         ${p.img ? `<img src="${esc(p.img)}" alt="${esc(label(p))} - Köken Fındık ürünü" width="400" height="300" loading="lazy">` : ''}
                 <div class="card__tags">
           ${p.disc ? `<span class="disc">%${p.disc} İndirim</span>` : ''}
-          <span class="tag">Yeni Mahsul</span>
+          <span class="tag tag--new">Yeni Mahsul</span>
         </div>
       </div>
       <div class="card__body">
