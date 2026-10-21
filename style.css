@@ -610,3 +610,22 @@ h4{font-size:var(--step-0);font-weight:var(--fw-semibold)}
 
 /* Hero slider kayma geçişini genel hareket azaltma kuralından koru */
 .hero__track{transition:transform .85s cubic-bezier(.22,.8,.25,1)!important}
+
+
+/* ===== Mobil hero: daha ferah içerik ve tek satır rozetler ===== */
+@media (max-width:768px){
+  .hero__slide{padding:2.2rem 0 4.6rem}
+  .hero__grid{gap:1.15rem}
+  .hero .hero__text h1{max-width:19ch;font-size:clamp(1.8rem,7.2vw,2.25rem);line-height:1.08;margin-bottom:.75rem}
+  .hero .hero__text p{font-size:.98rem;line-height:1.5;margin-bottom:1rem}
+  .hero .trust{flex-wrap:nowrap;gap:.45rem;margin-bottom:1.15rem;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
+  .hero .trust::-webkit-scrollbar{display:none}
+  .hero .trust li{flex:none;padding:.38rem .72rem;font-size:.82rem}
+  .hero .hero__media{aspect-ratio:16/9}
+  .hero .hero__text .btn{min-height:44px;padding:.72rem 1.35rem}
+}
+@media (max-width:380px){
+  .hero__slide{padding-top:1.9rem}
+  .hero .hero__text h1{font-size:clamp(1.7rem,7vw,1.95rem)}
+  .hero .trust li{padding-inline:.6rem;font-size:.78rem}
+}
