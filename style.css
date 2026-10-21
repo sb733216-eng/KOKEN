@@ -234,7 +234,7 @@ html{scroll-padding-top:140px}
 .assure__inner{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;padding:1.5rem 0}
 .assure__item{display:flex;align-items:center;gap:.9rem}
 .assure__ic{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:var(--green-s);color:var(--green)}
-.assure__item strong{display:block;font-size:.98rem}
+.assure__item strong{display:block;font-size:.98rem;color:var(--text)}
 .assure__item small{display:block;font-size:.9rem;font-weight:500;color:#454943;line-height:1.5}
 
 .footer__inner{grid-template-columns:repeat(4,1fr);gap:2rem}
