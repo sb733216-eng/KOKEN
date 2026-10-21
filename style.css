@@ -592,3 +592,16 @@ h4{font-size:var(--step-0);font-weight:var(--fw-semibold)}
   .hero-dots{bottom:1rem}
 }
 @media (prefers-reduced-motion:reduce){.hero__track,.hero-arrow,.hero-dots button{transition:none}}
+
+
+/* ===== Hero slayt geçiş animasyonu ===== */
+.hero__track{will-change:transform;transition:transform .85s cubic-bezier(.22,.8,.25,1)}
+.hero__slide[aria-hidden="true"]{visibility:visible;pointer-events:none}
+.hero__slide[aria-hidden="false"] .hero__text{animation:heroTextIn .65s .08s both cubic-bezier(.22,.8,.25,1)}
+.hero__slide[aria-hidden="false"] .hero__media{animation:heroMediaIn .8s both cubic-bezier(.22,.8,.25,1)}
+@keyframes heroTextIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes heroMediaIn{from{opacity:.55;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){
+  .hero__track{will-change:auto}
+  .hero__slide[aria-hidden="false"] .hero__text,.hero__slide[aria-hidden="false"] .hero__media{animation:none}
+}
