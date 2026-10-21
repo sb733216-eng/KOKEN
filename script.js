@@ -1075,7 +1075,7 @@ const IL_ILCE = {
   function showSlide(index) {
     active = (index + slides.length) % slides.length;
     track.style.transform = `translateX(-${active * 100}%)`;
-    slides.forEach((slide, i) => slide.setAttribute('aria-hidden', String(i !== active)));
+    slides.forEach((slide, i) => { slide.setAttribute('aria-hidden', String(i !== active)); slide.inert = i !== active; });
     dots.forEach((dot, i) => dot.setAttribute('aria-current', String(i === active)));
   }
 
