@@ -1052,3 +1052,75 @@ const IL_ILCE = {
   render();
   loadCatalog().then(setProducts);
 })();
+
+
+/* ===================== HERO SLIDER ===================== */
+(() => {
+  const hero = document.querySelector('.hero');
+  const track = document.querySelector('#heroTrack');
+  if (!hero || !track) return;
+
+  const slides = Array.from(track.querySelectorAll('.hero__slide'));
+  const dots = Array.from(hero.querySelectorAll('.hero-dots button'));
+  const previous = hero.querySelector('.hero-prev');
+  const next = hero.querySelector('.hero-next');
+  if (slides.length < 2) return;
+
+  let active = 0;
+  let timer = null;
+  let hovered = false;
+  let pointerStartX = null;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function showSlide(index) {
+    active = (index + slides.length) % slides.length;
+    track.style.transform = `translateX(-${active * 100}%)`;
+    slides.forEach((slide, i) => slide.setAttribute('aria-hidden', String(i !== active)));
+    dots.forEach((dot, i) => dot.setAttribute('aria-current', String(i === active)));
+  }
+
+  function stopAuto() {
+    if (timer) window.clearInterval(timer);
+    timer = null;
+  }
+
+  function startAuto() {
+    stopAuto();
+    if (!reduceMotion && !hovered && document.visibilityState === 'visible') {
+      timer = window.setInterval(() => showSlide(active + 1), 5000);
+    }
+  }
+
+  function goTo(index) {
+    showSlide(index);
+    startAuto();
+  }
+
+  previous?.addEventListener('click', () => goTo(active - 1));
+  next?.addEventListener('click', () => goTo(active + 1));
+  dots.forEach((dot, index) => dot.addEventListener('click', () => goTo(index)));
+
+  hero.addEventListener('mouseenter', () => {
+    hovered = true;
+    stopAuto();
+  });
+  hero.addEventListener('mouseleave', () => {
+    hovered = false;
+    startAuto();
+  });
+  document.addEventListener('visibilitychange', startAuto);
+
+  hero.addEventListener('pointerdown', (event) => {
+    pointerStartX = event.clientX;
+  }, { passive: true });
+  hero.addEventListener('pointerup', (event) => {
+    if (pointerStartX === null) return;
+    const distance = event.clientX - pointerStartX;
+    pointerStartX = null;
+    if (Math.abs(distance) > 45) goTo(active + (distance < 0 ? 1 : -1));
+  }, { passive: true });
+  hero.addEventListener('pointercancel', () => { pointerStartX = null; }, { passive: true });
+
+  showSlide(0);
+  startAuto();
+})();
