@@ -569,3 +569,26 @@ h4{font-size:var(--step-0);font-weight:var(--fw-semibold)}
 @media (max-width:768px){.mbar{grid-template-columns:repeat(2,minmax(0,1fr));justify-content:center}}
 
 @media (max-width:768px){.wa-island{display:flex!important;bottom:80px;right:16px}}
+
+
+/* ===== Ana sayfa hero carousel ===== */
+.hero{position:relative;overflow:hidden;padding:0}
+.hero__viewport{overflow:hidden;width:100%}
+.hero__track{display:flex;transition:transform .5s ease-in-out;touch-action:pan-y}
+.hero__slide{flex:0 0 100%;min-width:0;padding:clamp(3rem,6vw,4.5rem) 0 5rem}
+.hero__slide[aria-hidden="true"]{visibility:hidden}
+.hero-arrow{position:absolute;top:50%;z-index:3;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid rgba(255,255,255,.28);border-radius:50%;background:rgba(20,66,28,.68);color:#fff;font:inherit;font-size:2rem;line-height:1;cursor:pointer;transition:background .2s,transform .2s}
+.hero-arrow:hover{background:rgba(20,66,28,.95);transform:translateY(-50%) scale(1.06)}
+.hero-prev{left:1rem}
+.hero-next{right:1rem}
+.hero-dots{position:absolute;left:50%;bottom:1.1rem;z-index:3;display:flex;align-items:center;gap:.6rem;transform:translateX(-50%)}
+.hero-dots button{width:10px;height:10px;padding:0;border:1px solid rgba(255,255,255,.85);border-radius:50%;background:rgba(255,255,255,.45);cursor:pointer;transition:transform .2s,background .2s}
+.hero-dots button[aria-current="true"]{background:#f4d58d;border-color:#f4d58d;transform:scale(1.35)}
+@media (max-width:768px){
+  .hero__slide{padding:3rem 0 4.8rem}
+  .hero-arrow{width:34px;height:34px;font-size:1.6rem}
+  .hero-prev{left:.45rem}
+  .hero-next{right:.45rem}
+  .hero-dots{bottom:1rem}
+}
+@media (prefers-reduced-motion:reduce){.hero__track,.hero-arrow,.hero-dots button{transition:none}}
