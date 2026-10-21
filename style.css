@@ -607,3 +607,6 @@ h4{font-size:var(--step-0);font-weight:var(--fw-semibold)}
 }
 
 .tag--new{background:#15803d;color:#fff}
+
+/* Hero slider kayma geçişini genel hareket azaltma kuralından koru */
+.hero__track{transition:transform .85s cubic-bezier(.22,.8,.25,1)!important}
