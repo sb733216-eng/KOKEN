@@ -1,7 +1,7 @@
 <?php
 $product = $product ?? [
     'title' => '', 'weight' => '', 'chip' => '', 'category_id' => '', 'price' => '',
-    'old_price' => '', 'description' => '', 'ingredients' => '', 'image' => null,
+    'old_price' => '', 'description' => '', 'ingredients' => '', 'seo_title'=>'', 'seo_description'=>'', 'image' => null,
     'image2' => '', 'image3' => '', 'stock_qty' => null, 'is_active' => 1,
 ];
 ?>
@@ -25,6 +25,7 @@ $product = $product ?? [
         </div>
         <div class="mt-3"><label class="form-label" for="description">Açıklama</label><textarea class="form-control" id="description" name="description" rows="5" maxlength="10000"><?= e((string)$product['description']) ?></textarea></div>
         <div class="mt-3"><label class="form-label" for="ingredients">İçindekiler</label><textarea class="form-control" id="ingredients" name="ingredients" rows="2" maxlength="5000"><?= e((string)($product['ingredients'] ?? '')) ?></textarea></div>
+        <div class="content-card p-3 mt-3"><h3 class="h6">Arama motoru bilgileri</h3><p class="form-hint">Boş bırakırsanız ürün adı ve açıklaması kullanılır.</p><label class="form-label" for="seo_title">SEO başlığı</label><input class="form-control" id="seo_title" name="seo_title" maxlength="180" value="<?=e((string)($product['seo_title']??''))?>"><label class="form-label mt-2" for="seo_description">SEO açıklaması</label><textarea class="form-control" id="seo_description" name="seo_description" rows="3" maxlength="320"><?=e((string)($product['seo_description']??''))?></textarea></div>
       </div>
       <div class="col-lg-4">
         <label class="form-label">Ürün galerisi</label><p class="form-hint">Görselleri oklarla sıralayın; ana görsel mağaza kartında kullanılır. En fazla 3 görsel.</p>

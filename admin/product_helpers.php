@@ -6,6 +6,14 @@ function product_categories(PDO $pdo): array
     return $pdo->query('SELECT id, name FROM categories ORDER BY name')->fetchAll();
 }
 
+function record_stock_movement(PDO $pdo, int $productId, string $title, ?int $before, ?int $after, string $type, ?int $referenceId = null, string $note = ''): void
+{
+    if ($before === $after) return;
+    $delta = ($after ?? 0) - ($before ?? 0);
+    $stmt = $pdo->prepare('INSERT INTO stock_movements(product_id,product_title,change_qty,stock_before,stock_after,movement_type,reference_id,note) VALUES(:id,:title,:delta,:before,:after,:type,:reference,:note)');
+    $stmt->execute(['id'=>$productId,'title'=>$title,'delta'=>$delta,'before'=>$before,'after'=>$after,'type'=>$type,'reference'=>$referenceId,'note'=>$note]);
+}
+
 function text_length(string $value): int
 {
     return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
@@ -99,16 +107,19 @@ function validate_product_input(array $input): array
     }
     $description = trim((string)($input['description'] ?? ''));
     $ingredients = trim((string)($input['ingredients'] ?? ''));
+    $seoTitle = trim((string)($input['seo_title'] ?? ''));
+    $seoDescription = trim((string)($input['seo_description'] ?? ''));
     if (text_length($description) > 10000) throw new RuntimeException('Açıklama 10.000 karakteri geçemez.');
     if (text_length($weight) > 80 || text_length($chip) > 120) throw new RuntimeException('Gramaj 80, rozet metni 120 karakteri geçemez.');
     if (text_length($ingredients) > 5000) throw new RuntimeException('İçindekiler 5.000 karakteri geçemez.');
+    if (text_length($seoTitle) > 180 || text_length($seoDescription) > 320) throw new RuntimeException('SEO başlığı 180, açıklaması 320 karakteri geçemez.');
     $oldPriceText = str_replace(',', '.', trim((string)($input['old_price'] ?? '')));
     $oldPrice = null;
     if ($oldPriceText !== '') {
         if (!is_numeric($oldPriceText) || (float)$oldPriceText < 0 || (float)$oldPriceText > 99999999.99) throw new RuntimeException('Geçerli bir eski fiyat girin.');
         if ((float)$oldPriceText > (float)$priceText) $oldPrice = number_format((float)$oldPriceText, 2, '.', '');
     }
-    return ['title' => $title, 'weight' => $weight, 'chip' => $chip, 'price' => number_format((float)$priceText, 2, '.', ''), 'old_price' => $oldPrice, 'category_id' => $categoryId, 'description' => $description, 'ingredients' => $ingredients, 'stock_qty' => $stockQty, 'is_active' => isset($input['is_active']) ? 1 : 0];
+    return ['title' => $title, 'weight' => $weight, 'chip' => $chip, 'price' => number_format((float)$priceText, 2, '.', ''), 'old_price' => $oldPrice, 'category_id' => $categoryId, 'description' => $description, 'ingredients' => $ingredients, 'seo_title'=>$seoTitle, 'seo_description'=>$seoDescription, 'stock_qty' => $stockQty, 'is_active' => isset($input['is_active']) ? 1 : 0];
 }
 
 function product_image_url(?string $image): string

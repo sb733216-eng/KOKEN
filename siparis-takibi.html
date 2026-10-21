@@ -40,6 +40,7 @@
       <span class="track-result__code" id="trackCode"></span>
       <h2 id="trackStatus"></h2>
       <p id="trackDate"></p>
+      <p id="trackShipping" hidden></p>
       <ul id="trackItems"></ul>
     </section>
 
@@ -115,6 +116,9 @@
       document.getElementById('trackCode').textContent = `Sipariş #${order.code}`;
       document.getElementById('trackStatus').textContent = order.status;
       document.getElementById('trackDate').textContent = `Sipariş tarihi: ${order.date}`;
+      const shipping = document.getElementById('trackShipping');
+      shipping.textContent = order.carrier || order.trackingNumber ? `Kargo: ${order.carrier || 'Belirtilmedi'} · Takip no: ${order.trackingNumber || 'Henüz eklenmedi'}` : '';
+      shipping.hidden = !shipping.textContent;
       const list = document.getElementById('trackItems'); list.replaceChildren();
       order.items.forEach((item) => { const row = document.createElement('li'); row.textContent = `${item.product_title} × ${item.quantity}`; list.appendChild(row); });
       result.hidden = false;

@@ -342,7 +342,9 @@ const IL_ILCE = {
           img3: safeImg(String(p.image3 || '')),
           stockQty: p.stockQty === null || p.stockQty === undefined ? null : Number(p.stockQty),
           desc: String(p.description || ''),
-          ing: String(p.ingredients || '')
+          ing: String(p.ingredients || ''),
+          seoTitle: String(p.seo_title || ''),
+          seoDescription: String(p.seo_description || '')
         })).filter((p) => p.name && p.price >= 0);
       }
     } catch (err) {
@@ -377,8 +379,9 @@ const IL_ILCE = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: label(p),
+        ...(p.seoTitle ? { alternateName: p.seoTitle } : {}),
         sku: p.id,
-        description: p.desc || `${p.name} - Köken Fındık`,
+        description: p.seoDescription || p.desc || `${p.name} - Köken Fındık`,
         image: [p.img, p.img2, p.img3].filter(Boolean).map(abs).filter(Boolean),
         brand: { '@type': 'Brand', name: 'Köken Fındık' },
         category: p.catLabel || CAT_NAMES[p.cat] || 'Fındık',
@@ -768,6 +771,7 @@ const IL_ILCE = {
     $('#dAdd').disabled = unavailable || outOfStock;
     $('#dPlus').disabled = unavailable || outOfStock;
     $('#dMinus').disabled = unavailable || outOfStock;
+    $('#restockForm').hidden = unavailable || !outOfStock;
   }
 
   // Ana görsel + (varsa) küçük önizlemeler
@@ -825,6 +829,9 @@ const IL_ILCE = {
     chip.hidden = !(p.chip || p.weight);
 
     $('#dName').textContent = p.name;
+    $('#restockForm').dataset.productId = String(p.id);
+    $('#restockMessage').textContent = '';
+    $('#restockEmail').value = '';
         const imgs = Array.from(new Set([p.img, p.img2, p.img3].filter(Boolean)));
     setMainImage(imgs[0], label(p));
     buildThumbs(imgs, label(p));
@@ -861,6 +868,20 @@ const IL_ILCE = {
     const id = dId, n = dQty;
     closeModal($('#detail'));
     addToCart(id, n);
+  });
+  $('#restockForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget, button = $('#restockSubmit'), message = $('#restockMessage');
+    if (!$('#restockConsent').checked) { message.textContent = 'Talep için onay kutusunu işaretleyin.'; return; }
+    button.disabled = true; message.textContent = 'Kaydediliyor…';
+    try {
+      const tokenResponse = await fetch('api/restock-notifications.php', { cache: 'no-store' });
+      const tokenData = await tokenResponse.json();
+      const response = await fetch('api/restock-notifications.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': tokenData.csrfToken }, body: JSON.stringify({ productId: Number(form.dataset.productId), email: $('#restockEmail').value, consent: $('#restockConsent').checked }) });
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Talep kaydedilemedi.');
+      message.textContent = data.message; form.reset();
+    } catch (error) { message.textContent = error.message || 'Talep kaydedilemedi.'; }
+    finally { button.disabled = false; }
   });
 
   /* ---------- Yasal metinler (footer linkleri) ---------- */

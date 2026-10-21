@@ -86,6 +86,7 @@ try {
     $orderId = (int)$pdo->lastInsertId();
     $insertItem = $pdo->prepare('INSERT INTO order_items (order_id,product_id,product_title,unit_price,quantity,line_total) VALUES (:order_id,:product_id,:title,:price,:quantity,:line_total)');
     $updateStock = $pdo->prepare('UPDATE products SET stock_qty = stock_qty - :quantity WHERE id = :id AND stock_qty IS NOT NULL AND stock_qty >= :quantity_check');
+    $movement = $pdo->prepare("INSERT INTO stock_movements(product_id,product_title,change_qty,stock_before,stock_after,movement_type,reference_id,note) VALUES(:id,:title,:delta,:before,:after,'order',:reference,'Stok, sipariş verildiğinde düşüldü')");
     foreach ($quantities as $id => $qty) {
         $product = $products[$id];
         $unitCents = (int)round((float)$product['price'] * 100);
@@ -94,6 +95,7 @@ try {
         if ($product['stock_qty'] !== null) {
             $updateStock->execute(['quantity' => $qty, 'id' => $id, 'quantity_check' => $qty]);
             if ($updateStock->rowCount() !== 1) throw new DomainException($product['title'] . ' stok miktarı aynı anda değişti; lütfen tekrar deneyin.');
+            $movement->execute(['id'=>$id,'title'=>$product['title'],'delta'=>-$qty,'before'=>(int)$product['stock_qty'],'after'=>(int)$product['stock_qty']-$qty,'reference'=>$orderId]);
         }
     }
     $pdo->commit();

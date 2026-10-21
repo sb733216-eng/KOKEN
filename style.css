@@ -208,6 +208,10 @@ html{scroll-padding-top:140px}
 .detail__sec[hidden],.detail__desc[hidden]{display:none}
 .detail__sec h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:.35rem}
 .detail__sec p{font-size:.92rem;color:var(--text)}
+#restockForm input[type=email]{display:block;width:100%;max-width:28rem;padding:.75rem;border:1px solid #d8ded3;border-radius:.55rem;margin:.35rem 0 .75rem;font:inherit}
+#restockForm .restock-consent input{width:auto;max-width:none;margin:.2rem 0 0;padding:0}
+#restockForm button{margin-top:.25rem}
+.restock-consent{display:flex;align-items:flex-start;gap:.5rem;max-width:30rem;font-size:.83rem;color:var(--text)}
 .detail__buy{display:flex;align-items:center;gap:.8rem;margin-top:auto;padding-top:.5rem}
 .detail__buy .btn{flex:1}
 .qty--lg{padding:.25rem}

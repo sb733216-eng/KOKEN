@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS products (
     old_price DECIMAL(10,2) NULL,
     description TEXT NULL,
     ingredients TEXT NULL,
+    seo_title VARCHAR(180) NOT NULL DEFAULT '',
+    seo_description VARCHAR(320) NOT NULL DEFAULT '',
     image VARCHAR(255) NULL,
     image2 VARCHAR(255) NULL,
     image3 VARCHAR(255) NULL,
@@ -64,6 +66,8 @@ CREATE TABLE IF NOT EXISTS orders (
     shipping_fee DECIMAL(10,2) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
     status VARCHAR(32) NOT NULL DEFAULT 'pending_confirmation',
+    carrier VARCHAR(80) NOT NULL DEFAULT '',
+    tracking_number VARCHAR(120) NOT NULL DEFAULT '',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_orders_status (status),
@@ -87,4 +91,31 @@ CREATE TABLE IF NOT EXISTS order_items (
     CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
     INDEX idx_order_items_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS stock_movements (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id INT UNSIGNED NULL,
+    product_title VARCHAR(180) NOT NULL,
+    change_qty INT NOT NULL,
+    stock_before INT NULL,
+    stock_after INT NULL,
+    movement_type VARCHAR(32) NOT NULL,
+    reference_id BIGINT UNSIGNED NULL,
+    note VARCHAR(255) NOT NULL DEFAULT '',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_stock_movement_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+    INDEX idx_stock_movement_date (created_at), INDEX idx_stock_movement_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS restock_notifications (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id INT UNSIGNED NULL,
+    product_title VARCHAR(180) NOT NULL,
+    email VARCHAR(190) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    notified_at TIMESTAMP NULL DEFAULT NULL,
+    CONSTRAINT fk_restock_notification_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+    UNIQUE KEY uq_restock_product_email (product_id, email), INDEX idx_restock_status_date (status, requested_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

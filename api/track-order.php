@@ -26,7 +26,7 @@ $input = json_decode((string)file_get_contents('php://input'), true);
 $code = is_array($input) ? trim((string)($input['code'] ?? '')) : '';
 $phone = is_array($input) ? preg_replace('/\D+/', '', (string)($input['phone'] ?? '')) : '';
 if (!preg_match('/^\d{3,5}$/', $code) || !preg_match('/^05\d{9}$/', (string)$phone)) track_json(['error' => 'Sipariş kodunu (3-5 rakam) ve siparişte kullandığınız telefonu kontrol edin.'], 422);
-$find = $pdo->prepare('SELECT id,tracking_code,order_date,status,created_at,updated_at FROM orders WHERE tracking_code=:code AND phone=:phone ORDER BY order_date DESC,id DESC LIMIT 1');
+$find = $pdo->prepare('SELECT id,tracking_code,order_date,status,carrier,tracking_number,created_at,updated_at FROM orders WHERE tracking_code=:code AND phone=:phone ORDER BY order_date DESC,id DESC LIMIT 1');
 $find->execute(['code' => $code, 'phone' => $phone]);
 $order = $find->fetch();
 if (!$order) track_json(['error' => 'Bu kod ve telefonla eşleşen sipariş bulunamadı. Bilgileri kontrol edip tekrar deneyin.'], 404);
@@ -42,6 +42,8 @@ track_json([
     'date' => $order['order_date'],
     'status' => $labels[$order['status']] ?? 'Sipariş durumu güncelleniyor',
     'statusCode' => $order['status'],
+    'carrier' => $order['carrier'],
+    'trackingNumber' => $order['tracking_number'],
     'updatedAt' => $order['updated_at'],
     'items' => $items->fetchAll(),
 ]);

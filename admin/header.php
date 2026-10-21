@@ -24,6 +24,7 @@ unset($_SESSION['flash']);
       <a class="<?= $current === 'dashboard' ? 'active' : '' ?>" href="<?= e(app_url('admin/index.php')) ?>"><span>▦</span> Dashboard</a>
       <a class="<?= $current === 'products' ? 'active' : '' ?>" href="<?= e(app_url('admin/products/index.php')) ?>"><span>◇</span> Ürünler</a>
       <a class="<?= $current === 'orders' ? 'active' : '' ?>" href="<?= e(app_url('admin/orders/index.php')) ?>"><span>▣</span> Siparişler</a>
+      <a class="<?= $current === 'stock' ? 'active' : '' ?>" href="<?= e(app_url('admin/stock/index.php')) ?>"><span>↕</span> Stok & talepler</a>
       <a class="<?= $current === 'categories' ? 'active' : '' ?>" href="<?= e(app_url('admin/categories/index.php')) ?>"><span>▤</span> Kategoriler</a>
       <a class="<?= $current === 'settings' ? 'active' : '' ?>" href="<?= e(app_url('admin/settings.php')) ?>"><span>⚙</span> Mağaza ayarları</a>
       <a class="<?= $current === 'backup' ? 'active' : '' ?>" href="<?= e(app_url('admin/backup.php')) ?>"><span>⇩</span> Yedekleme</a>

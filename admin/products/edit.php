@@ -13,11 +13,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $gallery = prepare_product_gallery($product, $_FILES, $_POST);
         $data = array_merge($data, $gallery['columns']);
         $data['id'] = $id;
-        $update = $pdo->prepare('UPDATE products SET title=:title, weight=:weight, chip=:chip, category_id=:category_id, price=:price, old_price=:old_price, description=:description, ingredients=:ingredients, image=:image, image2=:image2, image3=:image3, is_active=:is_active, stock_qty=:stock_qty WHERE id=:id');
+        $pdo->beginTransaction();
+        $stockLock=$pdo->prepare('SELECT stock_qty FROM products WHERE id=:id FOR UPDATE');$stockLock->execute(['id'=>$id]);$lockedStock=$stockLock->fetchColumn();
+        if($lockedStock===false)throw new RuntimeException('Ürün bulunamadı.');
+        $beforeStock = $lockedStock === null ? null : (int)$lockedStock;
+        $update = $pdo->prepare('UPDATE products SET title=:title, weight=:weight, chip=:chip, category_id=:category_id, price=:price, old_price=:old_price, description=:description, ingredients=:ingredients, seo_title=:seo_title, seo_description=:seo_description, image=:image, image2=:image2, image3=:image3, is_active=:is_active, stock_qty=:stock_qty WHERE id=:id');
         $update->execute($data);
+        record_stock_movement($pdo,$id,$data['title'],$beforeStock,$data['stock_qty']===null?null:(int)$data['stock_qty'],'manual_update',null,'Ürün stok adedi panelden güncellendi');
+        $pdo->commit();
         foreach ($gallery['removed'] as $oldImage) remove_product_image($oldImage);
         flash('Ürün güncellendi.'); header('Location: ' . app_url('admin/products/index.php')); exit;
-    } catch (Throwable $exception) { foreach (($gallery['uploaded'] ?? []) as $uploadedImage) remove_product_image($uploadedImage); if (!($exception instanceof RuntimeException)) error_log($exception->getMessage()); $error = $exception instanceof RuntimeException ? $exception->getMessage() : 'Ürün güncellenemedi.'; $product = array_merge($product, $_POST); $product['is_active'] = isset($_POST['is_active']) ? 1 : 0; }
+    } catch (Throwable $exception) { if($pdo->inTransaction())$pdo->rollBack(); foreach (($gallery['uploaded'] ?? []) as $uploadedImage) remove_product_image($uploadedImage); if (!($exception instanceof RuntimeException)) error_log($exception->getMessage()); $error = $exception instanceof RuntimeException ? $exception->getMessage() : 'Ürün güncellenemedi.'; $product = array_merge($product, $_POST); $product['is_active'] = isset($_POST['is_active']) ? 1 : 0; }
 }
 $pageTitle = 'Ürünü düzenle'; $current = 'products'; $submitLabel = 'Değişiklikleri kaydet'; require __DIR__ . '/../header.php';
 ?>

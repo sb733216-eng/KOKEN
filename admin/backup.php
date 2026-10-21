@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($temporary === false) { http_response_code(500); exit('Geçici yedek dosyası oluşturulamadı.'); }
     $zip = new ZipArchive();
     if ($zip->open($temporary, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) { @unlink($temporary); http_response_code(500); exit('ZIP yedeği oluşturulamadı.'); }
-    $tables = ['categories','products','admin_users','store_settings','order_code_sequences','orders','order_items'];
+    $tables = ['categories','products','admin_users','store_settings','order_code_sequences','orders','order_items','stock_movements','restock_notifications'];
     $dump = "-- Koken Admin database backup\nSET FOREIGN_KEY_CHECKS=0;\n";
     foreach ($tables as $table) {
         $create = $pdo->query("SHOW CREATE TABLE `$table`")->fetch(PDO::FETCH_NUM);

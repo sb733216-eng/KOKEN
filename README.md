@@ -34,4 +34,8 @@ Sipariş, stok, galeri ve dışa aktarma özelliklerini mevcut veritabanına ekl
 
 Ürünler sayfasında CSV dışa aktarma bulunur. **Yedekleme** sayfası veritabanı tablolarını ve yüklenen ürün görsellerini tek ZIP olarak indirir; ZIP için XAMPP PHP ayarlarında `extension=zip` etkin olmalıdır.
 
+Ek sipariş/stok geliştirmeleri için `database/migrations/2026-10-22-orders-stock-seo.sql` dosyasını phpMyAdmin'de `koken_admin` veritabanı seçiliyken bir kez çalıştırın. Bu geçiş kargo firması ve takip no alanlarını, stok hareket defterini, stok gelince haber ver taleplerini ve ürün SEO alanlarını ekler. XAMPP mağazasında stok gelince haber ver formu e-posta toplar ve talepleri **Stok & talepler** ekranında listeler; e-posta gönderimi özellikle etkin değildir. Sipariş panelinden kargo firması/takip numarası kaydedilir ve müşteriye gönderilecek bilgilendirme mesajı WhatsApp'ta taslak olarak açılır. Müşteri takip sayfası kargo verisini gösterir.
+
+Dashboard günlük/aylık sipariş ve iptal dışı ciro grafikleri sunar. Sipariş listesi durum, tarih, müşteri, telefon ve kodla filtrelenebilir. Ürün formundaki SEO alanları JSON-LD ürün yapılandırılmış verisine aktarılır. Stok hareketleri sipariş, iptal/yeniden açma ve panelden yapılan stok düzenlemelerinde kaydedilir; yedekleme arşivi yeni tabloları da içerir.
+
 Günlük sipariş kodları 100'den başlar, 999'dan sonra dört ve gerekirse beş haneye çıkar. Kod alanının 5 haneye genişletilmesi için `database/migrations/2026-10-21-short-order-codes.sql` dosyasını mevcut veritabanında bir kez çalıştırın. Müşteri koduyla birlikte siparişte kullandığı telefonu girer. Aynı telefonla aynı gün oluşturulan her sipariş ayrı bir kod alır.

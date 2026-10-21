@@ -6,7 +6,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 require_once __DIR__ . '/../config/db.php';
 
 try {
-    $stmt = $pdo->query('SELECT p.id, p.title, p.weight, p.chip, p.price, p.old_price, p.description, p.ingredients, p.image, p.image2, p.image3, p.stock_qty, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.created_at DESC, p.id DESC');
+    $stmt = $pdo->query('SELECT p.id, p.title, p.weight, p.chip, p.price, p.old_price, p.description, p.ingredients, p.seo_title, p.seo_description, p.image, p.image2, p.image3, p.stock_qty, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.created_at DESC, p.id DESC');
     $products = array_map(static function (array $row): array {
         return [
             'id' => (string)$row['id'],
@@ -18,6 +18,8 @@ try {
             'old_price' => $row['old_price'] === null ? 0 : (float)$row['old_price'],
             'description' => $row['description'] ?? '',
             'ingredients' => $row['ingredients'] ?? '',
+            'seo_title' => $row['seo_title'] ?? '',
+            'seo_description' => $row['seo_description'] ?? '',
             'image' => product_image_path($row['image'] ?? null),
             'image2' => product_image_path($row['image2'] ?? null),
             'image3' => product_image_path($row['image3'] ?? null),
