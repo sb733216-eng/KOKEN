@@ -605,3 +605,5 @@ h4{font-size:var(--step-0);font-weight:var(--fw-semibold)}
   .hero__track{will-change:auto}
   .hero__slide[aria-hidden="false"] .hero__text,.hero__slide[aria-hidden="false"] .hero__media{animation:none}
 }
+
+.tag--new{background:#15803d;color:#fff}
