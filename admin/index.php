@@ -1,0 +1,14 @@
+<?php
+require_once __DIR__ . '/auth.php'; require_admin();
+$totalProducts = (int)$pdo->query('SELECT COUNT(*) FROM products')->fetchColumn();
+$activeProducts = (int)$pdo->query('SELECT COUNT(*) FROM products WHERE is_active = 1')->fetchColumn();
+$categoryCount = (int)$pdo->query('SELECT COUNT(*) FROM categories')->fetchColumn();
+$pendingOrders = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pending_confirmation'")->fetchColumn();
+$lowStockThreshold = (int)($pdo->query("SELECT setting_value FROM store_settings WHERE setting_key='low_stock_threshold'")->fetchColumn() ?: 5);
+$lowStockCount = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE stock_qty IS NOT NULL AND stock_qty <= " . $lowStockThreshold)->fetchColumn();
+$pageTitle = 'Dashboard'; $current = 'dashboard'; require __DIR__ . '/header.php';
+?>
+<div class="page-heading"><div><p class="eyebrow">GENEL BAKIŞ</p><h1>Dashboard</h1><p class="text-secondary">Mağazanızın güncel durumuna göz atın.</p></div><a class="btn btn-primary" href="<?= e(app_url('admin/products/add.php')) ?>">＋ Yeni ürün ekle</a></div>
+<div class="row g-3 mb-4"><div class="col-sm-6 col-xl-3"><div class="stat-card"><span class="stat-icon purple">◇</span><span class="stat-label">Toplam ürün</span><strong><?= $totalProducts ?></strong><small>Kataloğunuzdaki ürünler</small></div></div><div class="col-sm-6 col-xl-3"><div class="stat-card"><span class="stat-icon green">✓</span><span class="stat-label">Aktif ürün</span><strong><?= $activeProducts ?></strong><small>Yayında olan ürünler</small></div></div><div class="col-sm-6 col-xl-3"><div class="stat-card"><span class="stat-icon orange">!</span><span class="stat-label">Stok uyarısı</span><strong><?= $lowStockCount ?></strong><small>Stok <?= $lowStockThreshold ?> adet veya altında</small></div></div><div class="col-sm-6 col-xl-3"><div class="stat-card"><span class="stat-icon orange">▤</span><span class="stat-label">Kategori</span><strong><?= $categoryCount ?></strong><small>Ürün kategorileri</small></div></div></div>
+<div class="content-card"><div class="card-heading"><div><h2>Hızlı işlemler</h2><p>Onay bekleyen sipariş: <?= $pendingOrders ?></p></div></div><div class="quick-actions"><a href="<?= e(app_url('admin/products/add.php')) ?>"><span>＋</span><div><strong>Ürün ekle</strong><small>Kataloğa yeni bir ürün ekleyin</small></div><b>→</b></a><a href="<?= e(app_url('admin/products/index.php')) ?>"><span>◇</span><div><strong>Ürünleri yönet</strong><small>Ürünleri görüntüleyin ve yönetin</small></div><b>→</b></a><a href="<?= e(app_url('admin/orders/index.php')) ?>"><span>▣</span><div><strong>Siparişleri yönet</strong><small>Siparişleri ve durumlarını güncelleyin</small></div><b>→</b></a><a href="<?= e(app_url('admin/categories/index.php')) ?>"><span>▤</span><div><strong>Kategorileri yönet</strong><small>Kategori ekleyin veya kaldırın</small></div><b>→</b></a></div></div>
+<?php require __DIR__ . '/footer.php'; ?>

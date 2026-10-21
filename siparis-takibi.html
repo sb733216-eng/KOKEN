@@ -29,15 +29,22 @@
 <main class="container">
   <article class="doc">
     <h1>Sipariş Takibi</h1>
-    <p class="lead">Siparişinizin durumunu WhatsApp üzerinden anında öğrenin.</p>
+    <p class="lead">Sipariş kodunuz ve siparişte kullandığınız telefon numarasıyla durumunu görüntüleyin.</p>
+    <form id="trackOrderForm" class="form track-form" novalidate>
+      <label>Sipariş kodu * <small>(WhatsApp mesajınızdaki 3-5 rakam)</small><input name="code" inputmode="numeric" pattern="\d{3,5}" minlength="3" maxlength="5" placeholder="100" required></label>
+      <label>Siparişte kullandığınız telefon *<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" pattern="05\d{9}" maxlength="11" placeholder="05313385955" required></label>
+      <button class="btn btn--primary" type="submit">Siparişi sorgula</button>
+      <p id="trackError" class="form__err" role="alert" aria-live="polite"></p>
+    </form>
+    <section id="trackResult" class="track-result" aria-live="polite" hidden>
+      <span class="track-result__code" id="trackCode"></span>
+      <h2 id="trackStatus"></h2>
+      <p id="trackDate"></p>
+      <ul id="trackItems"></ul>
+    </section>
 
-<ol>
-  <li>Aşağıdaki butona tıklayarak WhatsApp hattımıza yazın.</li>
-  <li>Sipariş numaranızı veya siparişte kullandığınız ad-soyad ve telefon numaranızı iletin.</li>
-  <li>Ekibimiz siparişinizin durumunu (hazırlanıyor, kargoya verildi, teslim edildi) ve varsa kargo takip numarasını size iletir.</li>
-</ol>
-
-<a class="btn btn--wa" href="https://wa.me/905313385955?text=Merhaba%2C%20sipari%C5%9Fimin%20durumunu%20%C3%B6%C4%9Frenmek%20istiyorum.%20Sipari%C5%9F%20No%20%2F%20Ad%20Soyad%3A%20" target="_blank" rel="noopener">WhatsApp ile Sipariş Sorgula</a>
+<p>Siparişiniz henüz listede görünmüyorsa bilgileri kontrol edin veya WhatsApp'tan bize ulaşın.</p>
+<a class="btn btn--wa" href="https://wa.me/905313385955?text=Merhaba%2C%20sipari%C5%9Fimin%20durumunu%20%C3%B6%C4%9Frenmek%20istiyorum.%20Sipari%C5%9F%20kodum%3A%20" target="_blank" rel="noopener">WhatsApp ile iletişime geç</a>
 
 <h2>Bilmeniz Gerekenler</h2>
 <ul>
@@ -84,6 +91,38 @@
   </div>
   <div class="footer__copy">© 2026 Köken Fındık · Kırma, Kavurma, Ezme, Paketleme. Tüm hakları saklıdır.</div>
 </footer>
+
+<script>
+(() => {
+  const form = document.getElementById('trackOrderForm');
+  const error = document.getElementById('trackError');
+  const result = document.getElementById('trackResult');
+  form.elements.phone.addEventListener('input', () => { form.elements.phone.value = form.elements.phone.value.replace(/\D/g, '').slice(0, 11); });
+  form.elements.code.addEventListener('input', () => { form.elements.code.value = form.elements.code.value.replace(/\D/g, '').slice(0, 5); });
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault(); error.textContent = ''; result.hidden = true;
+    if (!form.reportValidity()) return;
+    const button = form.querySelector('button[type="submit"]'); button.disabled = true; button.textContent = 'Sorgulanıyor…';
+    try {
+      const tokenResponse = await fetch('api/track-order.php', { cache: 'no-store' });
+      const tokenData = await tokenResponse.json();
+      const response = await fetch('api/track-order.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': tokenData.csrfToken },
+        body: JSON.stringify({ code: form.elements.code.value, phone: form.elements.phone.value })
+      });
+      const order = await response.json();
+      if (!response.ok) throw new Error(order.error || 'Sipariş bulunamadı.');
+      document.getElementById('trackCode').textContent = `Sipariş #${order.code}`;
+      document.getElementById('trackStatus').textContent = order.status;
+      document.getElementById('trackDate').textContent = `Sipariş tarihi: ${order.date}`;
+      const list = document.getElementById('trackItems'); list.replaceChildren();
+      order.items.forEach((item) => { const row = document.createElement('li'); row.textContent = `${item.product_title} × ${item.quantity}`; list.appendChild(row); });
+      result.hidden = false;
+    } catch (exception) { error.textContent = exception.message || 'Sorgulama yapılamadı. Lütfen tekrar deneyin.'; }
+    finally { button.disabled = false; button.textContent = 'Siparişi sorgula'; }
+  });
+})();
+</script>
 
 </body>
 </html>

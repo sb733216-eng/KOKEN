@@ -1,10 +1,10 @@
 /* ===================== AYARLAR (kolayca değiştirilebilir) ===================== */
-// Google E-Tablolar: Dosya > Paylaş > Web'de yayınla > Sayfa seçin, biçim "CSV" > Yayınla > linki buraya yapıştırın.
-// Boş bırakılırsa veya veri çekilemezse aşağıdaki yedek (FALLBACK_PRODUCTS) ürünler gösterilir.
+// MySQL kataloğu ana kaynaktır; bağlantı kesilirse yedek kayıtlar satışa kapalı gösterilir.
 const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ27fgneO23qLFmXw-XCes8of-EJCWA4Ut-71crc_hwzfBnOFUw-Fe6t3-ejSJskTjrobP5kDo_5meN/pub?output=csv";
 const WHATSAPP_NO = "905313385955"; // Ülke koduyla, + ve boşluk olmadan. Örn: 905321234567
-const FREE_SHIPPING_LIMIT = 750;     // Bu tutar ve üzerinde kargo ücretsiz (TL)
-const SHIPPING_FEE = 60;             // Limit altındaki siparişlerde kargo ücreti (TL)
+let FREE_SHIPPING_LIMIT = 750;       // Veritabanındaki mağaza ayarlarından yüklenir.
+let SHIPPING_FEE = 60;
+let LOW_STOCK_THRESHOLD = 5;
 
 // Havale/EFT bilgileri (ödeme adımında gösterilir) - buradan değiştirin
 const IBAN_INFO = {
@@ -244,7 +244,7 @@ const IL_ILCE = {
   
   // Fiyat gösterimi: indirim varsa eski fiyat üstü çizili, güncel fiyat vurgulu
   const priceInner = (p) => (p.disc ? `<del>${fmt(p.old)}</del><span>${fmt(p.price)}</span>` : fmt(p.price));
-  const priceHTML = (p) => `<span class="price${p.disc ? ' price--sale' : ''}">${priceInner(p)}</span>`;
+  const priceHTML = (p) => p.catalogUnavailable ? '<span class="price">Fiyat bilgisi alınamıyor</span>' : p.stockQty === 0 ? '<span class="price">Stokta yok</span>' : `<span class="price${p.disc ? ' price--sale' : ''}">${priceInner(p)}</span>`;
 
   // Görsel yüklenemezse bozuk simge yerine arka plan görünsün
   document.addEventListener('error', (e) => {
@@ -266,6 +266,7 @@ const IL_ILCE = {
   /* ---------- Durum ---------- */
   let PRODUCTS = [];
   let byId = new Map();
+  let catalogUnavailable = false;
   let filter = 'all';
   let cart = load();
 
@@ -296,8 +297,60 @@ const IL_ILCE = {
     return { sub, ship, total: money(sub + ship) };
   }
 
-  /* ---------- Google Sheets ---------- */
+  /* ---------- MySQL admin kataloğu ve Google Sheets yedeği ---------- */
+  async function loadStoreSettings() {
+    try {
+      const res = await fetch('api/store-settings.php', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Mağaza ayarları API HTTP ' + res.status);
+      const settings = await res.json();
+      const limit = Number(settings.freeShippingLimit);
+      const fee = Number(settings.shippingFee);
+      if (Number.isFinite(limit) && limit >= 0) FREE_SHIPPING_LIMIT = limit;
+      if (Number.isFinite(fee) && fee >= 0) SHIPPING_FEE = fee;
+      const threshold = Number(settings.lowStockThreshold);
+      if (Number.isFinite(threshold) && threshold >= 0) LOW_STOCK_THRESHOLD = threshold;
+      const headline = $('#freeShippingHeadline');
+      if (headline) headline.textContent = `${fmt(FREE_SHIPPING_LIMIT)} Üzeri Siparişlerde Kargo Ücretsiz`;
+      const faqLimit = $('#shippingFaqLimit');
+      if (faqLimit) faqLimit.textContent = fmt(FREE_SHIPPING_LIMIT);
+      const faqFee = $('#shippingFaqFee');
+      if (faqFee) faqFee.textContent = fmt(SHIPPING_FEE);
+    } catch (err) {
+      console.warn('Mağaza ayarları yüklenemedi; varsayılan kargo değerleri kullanılıyor:', err);
+    }
+  }
+
   async function loadCatalog() {
+    try {
+      const localRes = await fetch('api/products.php', { cache: 'no-store' });
+      if (!localRes.ok) throw new Error('Ürün API HTTP ' + localRes.status);
+      const rows = await localRes.json();
+      catalogUnavailable = false;
+      if (Array.isArray(rows) && rows.length) {
+        return rows.map((p) => ({
+          id: String(p.id),
+          cat: slug(p.category),
+          catLabel: String(p.category || 'Genel'),
+          name: String(p.title || ''),
+          weight: String(p.weight || ''),
+          chip: String(p.chip || ''),
+          price: Number(p.price) || 0,
+          old: Number(p.old_price) || 0,
+          disc: Number(p.old_price) > Number(p.price) ? Math.round((Number(p.old_price) - Number(p.price)) * 100 / Number(p.old_price)) : 0,
+          img: safeImg(String(p.image || '')),
+          img2: safeImg(String(p.image2 || '')),
+          img3: safeImg(String(p.image3 || '')),
+          stockQty: p.stockQty === null || p.stockQty === undefined ? null : Number(p.stockQty),
+          desc: String(p.description || ''),
+          ing: String(p.ingredients || '')
+        })).filter((p) => p.name && p.price >= 0);
+      }
+    } catch (err) {
+      catalogUnavailable = true;
+      console.error('MySQL kataloğu okunamadı; satış kontrolleri kapatıldı:', err);
+      return FALLBACK_PRODUCTS.map((product) => ({ ...product, price: 0, old: 0, disc: 0, stockQty: 0, catalogUnavailable: true }));
+    }
+
     const url = String(GOOGLE_SHEET_CSV_URL || '').trim();
     if (!/^https?:\/\//i.test(url)) return FALLBACK_PRODUCTS;
     const ctl = new AbortController();
@@ -320,7 +373,7 @@ const IL_ILCE = {
     const abs = (u) => { try { return new URL(u, location.href).href; } catch (e) { return undefined; } };
     const prod = $('#ldProducts');
     if (prod) {
-      prod.textContent = JSON.stringify(PRODUCTS.map((p) => ({
+      prod.textContent = JSON.stringify(PRODUCTS.filter((p) => !p.catalogUnavailable).map((p) => ({
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: label(p),
@@ -332,8 +385,8 @@ const IL_ILCE = {
         offers: {
           '@type': 'Offer',
           priceCurrency: 'TRY',
-          price: String(p.price),
-          availability: 'https://schema.org/InStock',
+          ...(p.stockQty === 0 ? {} : { price: String(p.price) }),
+          availability: p.stockQty === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
           itemCondition: 'https://schema.org/NewCondition',
           url: abs('#urunler')
         }
@@ -356,11 +409,14 @@ const IL_ILCE = {
   }
 
   function setProducts(list) {
+    list.forEach((product) => { if (!Number.isFinite(product.stockQty)) product.stockQty = null; });
     PRODUCTS = list;
     byId = new Map(list.map((p) => [p.id, p]));
-    const before = cart.length;
+    const before = JSON.stringify(cart);
     cart = cart.filter((i) => byId.has(i.id)); // artık satışta olmayan ürünleri sepetten düş
-    if (cart.length !== before) save();
+    cart.forEach((i) => { const p = byId.get(i.id); if (p.stockQty !== null) i.qty = Math.min(i.qty, p.stockQty); });
+    cart = cart.filter((i) => i.qty > 0);
+    if (JSON.stringify(cart) !== before) save();
     if (filter !== 'all' && !list.some((p) => p.cat === filter)) filter = 'all';
     renderFilters();
     renderGrid();
@@ -379,6 +435,9 @@ const IL_ILCE = {
 
   function addControlHTML(id) {
     const q = cartQty(id), e = esc(id);
+    const p = byId.get(id);
+    if (p && p.catalogUnavailable) return `<button type="button" class="btn btn--ghost" disabled>Mağaza geçici olarak kapalı</button>`;
+    if (p && p.stockQty === 0 && q === 0) return `<button type="button" class="btn btn--ghost" disabled>Tükendi</button>`;
     return q > 0
       ? `<div class="qty-control" data-ctl="${e}"><button type="button" data-dec="${e}" aria-label="Adedi azalt">−</button><span aria-live="polite">${q}</span><button type="button" data-inc="${e}" aria-label="Adedi arttır">+</button></div>`
       : `<button type="button" class="btn btn--primary" data-add="${e}" data-ctl="${e}">Sepete Ekle</button>`;
@@ -409,6 +468,7 @@ const IL_ILCE = {
         ${p.img ? `<img src="${esc(p.img)}" alt="${esc(label(p))} - Köken Fındık ürünü" width="400" height="300" loading="lazy">` : ''}
                 <div class="card__tags">
           ${p.disc ? `<span class="disc">%${p.disc} İndirim</span>` : ''}
+          ${p.stockQty === 0 ? '<span class="stock-tag stock-tag--out">Stokta yok</span>' : (p.stockQty !== null && p.stockQty <= LOW_STOCK_THRESHOLD ? `<span class="stock-tag stock-tag--low">Stok azalıyor · Son ${p.stockQty} adet</span>` : '')}
           <span class="tag tag--new">Yeni Mahsul</span>
         </div>
       </div>
@@ -463,12 +523,28 @@ const IL_ILCE = {
    // quiet = true: kart üzerindeki butonlar sepet çekmecesini açmaz (detay modalı açar)
   function addToCart(id, n, quiet) {
     if (!byId.has(id)) return;
+    const product = byId.get(id);
+    if (catalogUnavailable || product.catalogUnavailable) { showToastMessage('Ürün bilgileri şu anda alınamıyor. Lütfen biraz sonra tekrar deneyin.'); return; }
     const f = cart.find((i) => i.id === id);
-    if (f) f.qty = Math.min(MAX_QTY, f.qty + n); else cart.push({ id, qty: Math.min(MAX_QTY, n) });
+    const desired = (f?.qty || 0) + n;
+    if (product.stockQty !== null && desired > product.stockQty) {
+      showToastMessage(product.stockQty > 0 ? `Stokta yalnızca ${product.stockQty} adet var.` : 'Bu ürün şu anda stokta yok.');
+      return;
+    }
+    if (f) f.qty = Math.min(MAX_QTY, desired); else cart.push({ id, qty: Math.min(MAX_QTY, desired) });
     commit();
     const c = $('#openCart');
     c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
     if (!quiet) openDrawer();
+  }
+
+  function showToastMessage(message) {
+    $('#toastMsg').textContent = message;
+    const tm = toast.querySelector('.toast__timer');
+    tm.style.animation = 'none'; void tm.offsetWidth; tm.style.animation = '';
+    toast.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 3000);
   }
 
 
@@ -476,6 +552,8 @@ const IL_ILCE = {
   function changeCartQty(id, delta) {
     const it = cart.find((i) => i.id === id);
     if (!it) return;
+    const product = byId.get(id);
+    if (delta > 0 && product && product.stockQty !== null && it.qty >= product.stockQty) { showToastMessage(`Stokta yalnızca ${product.stockQty} adet var.`); return; }
     it.qty = Math.min(MAX_QTY, it.qty + delta);
     if (it.qty <= 0) cart = cart.filter((i) => i !== it);
     commit();
@@ -509,7 +587,7 @@ const IL_ILCE = {
   // Sepette olmayan ürünlerden önce Ezme kategorisini, yoksa sıradaki ürünü önerir
   function pickUpsell() {
     const inCart = new Set(cart.map((i) => i.id));
-    const rest = PRODUCTS.filter((p) => !inCart.has(p.id));
+    const rest = PRODUCTS.filter((p) => !inCart.has(p.id) && !p.catalogUnavailable && (p.stockQty === null || p.stockQty > cartQty(p.id)));
     return rest.find((p) => p.cat === 'ezme') || rest[0] || null;
   }
 
@@ -684,7 +762,12 @@ const IL_ILCE = {
     const p = byId.get(dId);
     if (!p) return;
     $('#dQty').textContent = dQty;
-    $('#dAdd').textContent = `Sepete Ekle · ${fmt(p.price * dQty)}`;
+    const unavailable = catalogUnavailable || p.catalogUnavailable;
+    const outOfStock = p.stockQty === 0;
+    $('#dAdd').textContent = unavailable ? 'Mağaza geçici olarak kapalı' : outOfStock ? 'Stokta yok' : `Sepete Ekle · ${fmt(p.price * dQty)}`;
+    $('#dAdd').disabled = unavailable || outOfStock;
+    $('#dPlus').disabled = unavailable || outOfStock;
+    $('#dMinus').disabled = unavailable || outOfStock;
   }
 
   // Ana görsel + (varsa) küçük önizlemeler
@@ -755,7 +838,9 @@ const IL_ILCE = {
    // chip.hidden = !(p.chip || p.weight);
 
     $('#dName').textContent = p.name;
-    $('#dPrice').innerHTML = priceInner(p);
+    if (p.catalogUnavailable || catalogUnavailable) $('#dPrice').textContent = 'Fiyat bilgisi alınamıyor';
+    else if (p.stockQty === 0) $('#dPrice').textContent = 'Stokta yok';
+    else $('#dPrice').innerHTML = priceInner(p);
     $('#dPrice').classList.toggle('price--sale', !!p.disc);
 
     const desc = $('#dDesc');
@@ -771,7 +856,7 @@ const IL_ILCE = {
   }
 
   $('#dMinus').addEventListener('click', () => { dQty = Math.max(1, dQty - 1); syncDetailQty(); });
-  $('#dPlus').addEventListener('click', () => { dQty = Math.min(MAX_QTY, dQty + 1); syncDetailQty(); });
+  $('#dPlus').addEventListener('click', () => { const p = byId.get(dId); if (p && p.stockQty !== null && dQty + cartQty(dId) >= p.stockQty) { showToastMessage(`Stokta yalnızca ${p.stockQty} adet var.`); return; } dQty = Math.min(MAX_QTY, dQty + 1); syncDetailQty(); });
   $('#dAdd').addEventListener('click', () => {
     const id = dId, n = dQty;
     closeModal($('#detail'));
@@ -988,18 +1073,19 @@ const IL_ILCE = {
   });
 
   /* ---------- WhatsApp mesajı ve yönlendirme ---------- */
-  function buildMessage(v) {
-    const { sub, ship, total } = totals();
-    const items = lines().map((l) => `• ${l.qty}x ${label(l.p)} - ${fmt(l.p.price * l.qty)}`);
+  function buildMessage(v, order) {
+    const items = order.items.map((item) => `• ${item.quantity}x ${item.title} - ${fmt(item.lineTotal)}`);
     return [
       '*KÖKEN FINDIK - YENİ SİPARİŞ* 🌰',
+      `*Sipariş No:* ${order.orderNumber}`,
+      `*Tarih:* ${order.orderDate}`,
       SEP,
       '*Sipariş Kalemleri:*',
       ...items,
       SEP,
-      `*Ara Toplam:* ${fmt(sub)}`,
-      `*Kargo:* ${ship ? fmt(ship) : 'Ücretsiz'}`,
-      `*Genel Toplam:* ${fmt(total)}`,
+      `*Ara Toplam:* ${fmt(order.subtotal)}`,
+      `*Kargo:* ${order.shippingFee ? fmt(order.shippingFee) : 'Ücretsiz'}`,
+      `*Genel Toplam:* ${fmt(order.total)}`,
       SEP,
       '*Teslimat Bilgileri:*',
       `*Alıcı:* ${v.name}`,
@@ -1010,7 +1096,7 @@ const IL_ILCE = {
     ].join('\n');
   }
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!lines().length) return;
     if (step === 1) { goToPay(); return; } // 1. adımda Enter: ödeme adımına geç
@@ -1025,22 +1111,41 @@ const IL_ILCE = {
 
     const v = readValues();
     v.pay = PAY_LABELS[pay];
-    const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_NO}&text=${encodeURIComponent(buildMessage(v))}`;
+    const pendingWindow = window.open('about:blank', '_blank');
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    $('#payErr').textContent = 'Sipariş kaydediliyor…';
+    try {
+      const tokenResponse = await fetch('api/orders.php', { cache: 'no-store' });
+      if (!tokenResponse.ok) throw new Error('Sipariş doğrulaması başlatılamadı.');
+      const tokenData = await tokenResponse.json();
+      const orderResponse = await fetch('api/orders.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': tokenData.csrfToken },
+        body: JSON.stringify({ ...v, payment: pay, items: lines().map((line) => ({ id: line.p.id, qty: line.qty })) })
+      });
+      const order = await orderResponse.json();
+      if (!orderResponse.ok) throw new Error(order.error || 'Sipariş kaydedilemedi.');
+      const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_NO}&text=${encodeURIComponent(buildMessage(v, order))}`;
+      if (pendingWindow) { pendingWindow.location.href = url; pendingWindow.opener = null; }
+      else window.location.href = url;
 
-    // Kullanıcı tıklamasıyla aynı anda açılır; engellenirse aynı sekmede devam eder
-    const w = window.open(url, '_blank');
-    if (w) w.opener = null; else window.location.href = url;
-
-    cart = [];
-    commit();
-    form.reset();
-    fillDistricts('');
-    $('#ibanBox').hidden = true;
-    showStep(1);
-    $$('.form .bad').forEach((x) => x.classList.remove('bad'));
-    $('#waFallback').href = url;
-    closeModal($('#checkout'));
-    openModal('sent');
+      $('#sentTitle').textContent = `Siparişiniz kaydedildi · ${order.orderNumber}`;
+      $('#sent .modal__body > p:first-of-type').textContent = 'Sipariş kaydınız oluşturuldu. Siparişinizi tamamlamak için açılan WhatsApp ekranında Gönder tuşuna basın.';
+      cart = [];
+      commit();
+      form.reset();
+      fillDistricts('');
+      $('#ibanBox').hidden = true;
+      showStep(1);
+      $$('.form .bad').forEach((x) => x.classList.remove('bad'));
+      $('#waFallback').href = url;
+      closeModal($('#checkout'));
+      openModal('sent');
+    } catch (error) {
+      if (pendingWindow) pendingWindow.close();
+      $('#payErr').textContent = error.message || 'Sipariş kaydedilemedi.';
+    } finally { submitButton.disabled = false; }
   });
   form.addEventListener('input', (e) => e.target.classList.remove('bad'));
 
@@ -1050,7 +1155,7 @@ const IL_ILCE = {
   
   $('#grid').innerHTML = '<p class="grid__msg">Ürünler yükleniyor…</p>';
   render();
-  loadCatalog().then(setProducts);
+  Promise.all([loadStoreSettings(), loadCatalog()]).then(([, products]) => setProducts(products));
 })();
 
 
