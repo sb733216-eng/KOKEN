@@ -1068,9 +1068,7 @@ const IL_ILCE = {
 
   let active = 0;
   let timer = null;
-  let hovered = false;
   let pointerStartX = null;
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function showSlide(index) {
     active = (index + slides.length) % slides.length;
@@ -1086,7 +1084,7 @@ const IL_ILCE = {
 
   function startAuto() {
     stopAuto();
-    if (!reduceMotion && !hovered && document.visibilityState === 'visible') {
+    if (document.visibilityState === 'visible') {
       timer = window.setInterval(() => showSlide(active + 1), 5000);
     }
   }
@@ -1100,14 +1098,6 @@ const IL_ILCE = {
   next?.addEventListener('click', () => goTo(active + 1));
   dots.forEach((dot, index) => dot.addEventListener('click', () => goTo(index)));
 
-  hero.addEventListener('mouseenter', () => {
-    hovered = true;
-    stopAuto();
-  });
-  hero.addEventListener('mouseleave', () => {
-    hovered = false;
-    startAuto();
-  });
   document.addEventListener('visibilitychange', startAuto);
 
   hero.addEventListener('pointerdown', (event) => {
