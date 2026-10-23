@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1c5a27">
+  <meta name="robots" content="noindex,follow">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>Sayfa Bulunamadı | Köken Fındık</title>
+  <meta name="description" content="Aradığınız sayfa bulunamadı. Köken Fındık ana sayfasına dönün veya siparişinizi takip edin.">
+  <style>
+    .not-found{min-height:70vh;display:grid;place-items:center;text-align:center;padding:3rem 1rem}
+    .not-found__inner{max-width:38rem}
+    .not-found__code{font-size:clamp(4rem,15vw,8rem);line-height:1;color:#1c5a27;font-weight:800;margin:0}
+    .not-found h1{margin:.5rem 0 1rem}
+    .not-found__actions{display:flex;justify-content:center;flex-wrap:wrap;gap:.75rem;margin-top:1.5rem}
+  </style>
+</head>
+<body>
+  <main class="not-found container">
+    <div class="not-found__inner">
+      <p class="not-found__code" aria-hidden="true">404</p>
+      <h1>Bu sayfayı bulamadık</h1>
+      <p>Adres değişmiş veya bağlantı artık kullanılmıyor olabilir. Mağazaya dönüp ürünleri inceleyebilir ya da siparişinizi takip edebilirsiniz.</p>
+      <div class="not-found__actions">
+        <a class="btn btn--primary" href="./">Mağazaya dön</a>
+        <a class="btn btn--ghost" href="siparis-takibi.html">Siparişimi takip et</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

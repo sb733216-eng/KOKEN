@@ -6,11 +6,13 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 require_once __DIR__ . '/../config/db.php';
 
 try {
-    $stmt = $pdo->query('SELECT p.id, p.title, p.weight, p.chip, p.price, p.old_price, p.description, p.ingredients, p.seo_title, p.seo_description, p.image, p.image2, p.image3, p.stock_qty, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.created_at DESC, p.id DESC');
+    $stmt = $pdo->query('SELECT p.id, p.title, p.slug, p.badges, p.weight, p.chip, p.price, p.old_price, p.description, p.ingredients, p.seo_title, p.seo_description, p.image, p.image2, p.image3, p.stock_qty, p.is_new_harvest, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.created_at DESC, p.id DESC');
     $products = array_map(static function (array $row): array {
         return [
             'id' => (string)$row['id'],
             'title' => $row['title'],
+            'slug' => $row['slug'],
+            'badges' => array_values(array_filter(array_map('trim', preg_split('/\\R/u', (string)($row['badges'] ?? '')) ?: []))),
             'category' => $row['category_name'] ?: 'Genel',
             'weight' => $row['weight'] ?? '',
             'chip' => $row['chip'] ?? '',
@@ -24,6 +26,7 @@ try {
             'image2' => product_image_path($row['image2'] ?? null),
             'image3' => product_image_path($row['image3'] ?? null),
             'stockQty' => $row['stock_qty'] === null ? null : (int)$row['stock_qty'],
+            'newHarvest' => (bool)$row['is_new_harvest'],
         ];
     }, $stmt->fetchAll());
     echo json_encode($products, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
@@ -36,7 +39,6 @@ try {
 function product_image_path(?string $image): string
 {
     if (!$image) return '';
-    if (filter_var($image, FILTER_VALIDATE_URL) && strtolower((string)parse_url($image, PHP_URL_SCHEME)) === 'https') return $image;
     if (basename($image) !== $image) return '';
     return 'uploads/products/' . rawurlencode($image);
 }

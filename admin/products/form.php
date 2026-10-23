@@ -1,8 +1,8 @@
 <?php
 $product = $product ?? [
-    'title' => '', 'weight' => '', 'chip' => '', 'category_id' => '', 'price' => '',
+    'title' => '', 'slug' => '', 'badges' => '', 'weight' => '', 'chip' => '', 'category_id' => '', 'price' => '',
     'old_price' => '', 'description' => '', 'ingredients' => '', 'seo_title'=>'', 'seo_description'=>'', 'image' => null,
-    'image2' => '', 'image3' => '', 'stock_qty' => null, 'is_active' => 1,
+    'image2' => '', 'image3' => '', 'stock_qty' => null, 'is_new_harvest' => 0, 'is_active' => 1,
 ];
 ?>
 <div class="content-card form-card">
@@ -13,6 +13,7 @@ $product = $product ?? [
     <div class="row g-4">
       <div class="col-lg-8">
         <div class="mb-3"><label class="form-label" for="title">Ürün adı <span class="required">*</span></label><input class="form-control" id="title" name="title" maxlength="180" value="<?= e((string)$product['title']) ?>" required></div>
+        <div class="mb-3"><label class="form-label" for="slug">Ürün sayfası adresi</label><input class="form-control" id="slug" name="slug" maxlength="220" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value="<?= e((string)($product['slug'] ?? '')) ?>" placeholder="Boş bırakılırsa ürün adından oluşturulur"><small class="form-hint">Adres: /urun/<?= e((string)($product['slug'] ?? 'urun-adi')) ?> · Adres değişirse önceki ürün adresi yenisine yönlendirilir.</small></div>
         <div class="row g-3">
           <div class="col-md-6"><label class="form-label" for="weight">Gramaj</label><input class="form-control" id="weight" name="weight" maxlength="80" value="<?= e((string)($product['weight'] ?? '')) ?>" placeholder="500g"></div>
           <div class="col-md-6"><label class="form-label" for="chip">Kart etiketi</label><input class="form-control" id="chip" name="chip" maxlength="120" value="<?= e((string)($product['chip'] ?? '')) ?>" placeholder="Avantaj paketi"></div>
@@ -25,6 +26,7 @@ $product = $product ?? [
         </div>
         <div class="mt-3"><label class="form-label" for="description">Açıklama</label><textarea class="form-control" id="description" name="description" rows="5" maxlength="10000"><?= e((string)$product['description']) ?></textarea></div>
         <div class="mt-3"><label class="form-label" for="ingredients">İçindekiler</label><textarea class="form-control" id="ingredients" name="ingredients" rows="2" maxlength="5000"><?= e((string)($product['ingredients'] ?? '')) ?></textarea></div>
+        <div class="mt-3"><label class="form-label" for="badges">Doğrulanmış ürün özellikleri</label><textarea class="form-control" id="badges" name="badges" rows="3" maxlength="1000" placeholder="Her özelliği ayrı satıra yazın"><?= e((string)($product['badges'] ?? '')) ?></textarea><small class="form-hint">Örneğin alerjen/üretim iddiası gibi yalnızca bu üründe doğrulanmış bilgileri ekleyin.</small></div>
         <div class="content-card p-3 mt-3"><h3 class="h6">Arama motoru bilgileri</h3><p class="form-hint">Boş bırakırsanız ürün adı ve açıklaması kullanılır.</p><label class="form-label" for="seo_title">SEO başlığı</label><input class="form-control" id="seo_title" name="seo_title" maxlength="180" value="<?=e((string)($product['seo_title']??''))?>"><label class="form-label mt-2" for="seo_description">SEO açıklaması</label><textarea class="form-control" id="seo_description" name="seo_description" rows="3" maxlength="320"><?=e((string)($product['seo_description']??''))?></textarea></div>
       </div>
       <div class="col-lg-4">
@@ -41,7 +43,8 @@ $product = $product ?? [
           </div>
         <?php endforeach; ?>
         </div>
-        <div class="form-check form-switch active-switch mt-4"><input class="form-check-input" type="checkbox" role="switch" name="is_active" id="is_active" value="1" <?= !empty($product['is_active']) ? 'checked' : '' ?>><label class="form-check-label" for="is_active">Ürün aktif</label></div><small class="form-hint">Aktif ürünler mağazada görünür.</small>
+        <div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="is_new_harvest" id="is_new_harvest" value="1" <?= !empty($product['is_new_harvest']) ? 'checked' : '' ?>><label class="form-check-label" for="is_new_harvest">“Yeni Mahsul” etiketini göster</label></div>
+        <div class="form-check form-switch active-switch mt-3"><input class="form-check-input" type="checkbox" role="switch" name="is_active" id="is_active" value="1" <?= !empty($product['is_active']) ? 'checked' : '' ?>><label class="form-check-label" for="is_active">Ürün aktif</label></div><small class="form-hint">Aktif ürünler mağazada görünür.</small>
       </div>
     </div>
     <div class="form-actions"><a class="btn btn-light" href="<?= e(app_url('admin/products/index.php')) ?>">Vazgeç</a><button class="btn btn-primary" type="submit"><?= e($submitLabel) ?></button></div>

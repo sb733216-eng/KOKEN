@@ -1,0 +1,7 @@
+# XAMPP development path. If the site is deployed at the domain root, change
+# this to: ErrorDocument 404 /404.html
+ErrorDocument 404 /koken-admin/404.html
+
+RewriteEngine On
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^urun/([a-z0-9]+(?:-[a-z0-9]+)*)/?$ product.php?slug=$1 [L,QSA]

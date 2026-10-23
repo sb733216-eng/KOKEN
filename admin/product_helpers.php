@@ -19,6 +19,35 @@ function text_length(string $value): int
     return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
 }
 
+function product_slugify(string $value): string
+{
+    $value = trim($value);
+    $ascii = function_exists('iconv') ? iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) : false;
+    if (is_string($ascii)) $value = $ascii;
+    $value = strtolower($value);
+    $value = preg_replace('/[^a-z0-9]+/', '-', $value) ?? '';
+    return trim($value, '-');
+}
+
+function unique_product_slug(PDO $pdo, string $requested, ?int $excludeId = null): string
+{
+    $base = product_slugify($requested);
+    if ($base === '') $base = 'urun';
+    $base = substr($base, 0, 200);
+    $candidate = $base;
+    $suffix = 2;
+    while (true) {
+        $sql = 'SELECT id FROM products WHERE slug = :slug' . ($excludeId ? ' AND id <> :id' : '') . ' LIMIT 1';
+        $stmt = $pdo->prepare($sql);
+        $params = ['slug' => $candidate];
+        if ($excludeId) $params['id'] = $excludeId;
+        $stmt->execute($params);
+        if (!$stmt->fetchColumn()) return $candidate;
+        $tail = '-' . $suffix++;
+        $candidate = substr($base, 0, 220 - strlen($tail)) . $tail;
+    }
+}
+
 function save_product_image(?array $file): ?string
 {
     if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
@@ -57,7 +86,9 @@ function prepare_product_gallery(array $current, array $files, array $input): ar
         foreach ($slots as $slot) {
             $newFile = save_product_image($files[$slot] ?? null);
             if ($newFile !== null) $uploaded[] = $newFile;
-            $gallery[$slot] = $newFile ?? ($current[$slot] ?? null);
+            $currentImage = $current[$slot] ?? null;
+            if (!is_string($currentImage) || $currentImage === '' || basename($currentImage) !== $currentImage) $currentImage = null;
+            $gallery[$slot] = $newFile ?? $currentImage;
         }
     } catch (Throwable $exception) {
         foreach ($uploaded as $filename) remove_product_image($filename);
@@ -89,7 +120,7 @@ function prepare_product_gallery(array $current, array $files, array $input): ar
     return ['columns' => $columns, 'uploaded' => $uploaded, 'removed' => array_values(array_unique($removed))];
 }
 
-function validate_product_input(array $input): array
+function validate_product_input(array $input, PDO $pdo, ?int $excludeId = null): array
 {
     $title = trim((string)($input['title'] ?? ''));
     $weight = trim((string)($input['weight'] ?? ''));
@@ -109,24 +140,26 @@ function validate_product_input(array $input): array
     $ingredients = trim((string)($input['ingredients'] ?? ''));
     $seoTitle = trim((string)($input['seo_title'] ?? ''));
     $seoDescription = trim((string)($input['seo_description'] ?? ''));
+    $slug = unique_product_slug($pdo, trim((string)($input['slug'] ?? '')) !== '' ? (string)$input['slug'] : $title, $excludeId);
+    $badges = trim((string)($input['badges'] ?? ''));
     if (text_length($description) > 10000) throw new RuntimeException('Açıklama 10.000 karakteri geçemez.');
     if (text_length($weight) > 80 || text_length($chip) > 120) throw new RuntimeException('Gramaj 80, rozet metni 120 karakteri geçemez.');
     if (text_length($ingredients) > 5000) throw new RuntimeException('İçindekiler 5.000 karakteri geçemez.');
     if (text_length($seoTitle) > 180 || text_length($seoDescription) > 320) throw new RuntimeException('SEO başlığı 180, açıklaması 320 karakteri geçemez.');
+    if (text_length($badges) > 1000) throw new RuntimeException('Ürün özellikleri toplam 1.000 karakteri geçemez.');
+    foreach (preg_split('/\R/u', $badges) ?: [] as $badge) if (text_length(trim($badge)) > 100) throw new RuntimeException('Her ürün özelliği en fazla 100 karakter olabilir.');
     $oldPriceText = str_replace(',', '.', trim((string)($input['old_price'] ?? '')));
     $oldPrice = null;
     if ($oldPriceText !== '') {
         if (!is_numeric($oldPriceText) || (float)$oldPriceText < 0 || (float)$oldPriceText > 99999999.99) throw new RuntimeException('Geçerli bir eski fiyat girin.');
         if ((float)$oldPriceText > (float)$priceText) $oldPrice = number_format((float)$oldPriceText, 2, '.', '');
     }
-    return ['title' => $title, 'weight' => $weight, 'chip' => $chip, 'price' => number_format((float)$priceText, 2, '.', ''), 'old_price' => $oldPrice, 'category_id' => $categoryId, 'description' => $description, 'ingredients' => $ingredients, 'seo_title'=>$seoTitle, 'seo_description'=>$seoDescription, 'stock_qty' => $stockQty, 'is_active' => isset($input['is_active']) ? 1 : 0];
+    return ['title' => $title, 'slug' => $slug, 'badges' => $badges, 'weight' => $weight, 'chip' => $chip, 'price' => number_format((float)$priceText, 2, '.', ''), 'old_price' => $oldPrice, 'category_id' => $categoryId, 'description' => $description, 'ingredients' => $ingredients, 'seo_title'=>$seoTitle, 'seo_description'=>$seoDescription, 'stock_qty' => $stockQty, 'is_new_harvest' => isset($input['is_new_harvest']) ? 1 : 0, 'is_active' => isset($input['is_active']) ? 1 : 0];
 }
 
 function product_image_url(?string $image): string
 {
     if (!$image) return '';
-    // Legacy products can contain remote URLs until their images are re-uploaded locally.
-    if (filter_var($image, FILTER_VALIDATE_URL) && strtolower((string)parse_url($image, PHP_URL_SCHEME)) === 'https') return $image;
     if (basename($image) !== $image) return '';
     return app_url('uploads/products/' . rawurlencode($image));
 }

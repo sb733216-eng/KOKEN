@@ -4,12 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1c5a27">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <title>Sipariş Takibi | Köken Fındık</title>
-<meta name="description" content="{{KISA AÇIKLAMA}}">
+<meta name="description" content="Sipariş numaranız ve telefon numaranızla Köken Fındık sipariş durumunu ve kargo bilgilerini takip edin.">
+<link rel="canonical" href="https://kokenfindik.com/siparis-takibi.html">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Köken Fındık"><meta property="og:url" content="https://kokenfindik.com/siparis-takibi.html"><meta property="og:title" content="Sipariş Takibi | Köken Fındık"><meta property="og:description" content="Sipariş numaranız ve telefon numaranızla Köken Fındık sipariş durumunu ve kargo bilgilerini takip edin."><meta property="og:image" content="https://kokenfindik.com/og-image.jpg"><meta property="og:image:alt" content="Köken Fındık'tan taze Karadeniz fındığı"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261023-seo-consent">
+<script src="cookie-consent.js" defer></script>
 </head>
 <body>
 
@@ -31,7 +35,7 @@
     <h1>Sipariş Takibi</h1>
     <p class="lead">Sipariş kodunuz ve siparişte kullandığınız telefon numarasıyla durumunu görüntüleyin.</p>
     <form id="trackOrderForm" class="form track-form" novalidate>
-      <label>Sipariş kodu * <small>(WhatsApp mesajınızdaki 3-5 rakam)</small><input name="code" inputmode="numeric" pattern="\d{3,5}" minlength="3" maxlength="5" placeholder="100" required></label>
+      <label>Sipariş numarası * <small>(Yeni siparişlerde WhatsApp mesajındaki kısa numara)</small><input name="code" inputmode="text" pattern="(?:\d{3,10}|[A-Fa-f0-9]{32})" minlength="3" maxlength="32" placeholder="Ör. 100" required></label>
       <label>Siparişte kullandığınız telefon *<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" pattern="05\d{9}" maxlength="11" placeholder="05313385955" required></label>
       <button class="btn btn--primary" type="submit">Siparişi sorgula</button>
       <p id="trackError" class="form__err" role="alert" aria-live="polite"></p>
@@ -99,7 +103,7 @@
   const error = document.getElementById('trackError');
   const result = document.getElementById('trackResult');
   form.elements.phone.addEventListener('input', () => { form.elements.phone.value = form.elements.phone.value.replace(/\D/g, '').slice(0, 11); });
-  form.elements.code.addEventListener('input', () => { form.elements.code.value = form.elements.code.value.replace(/\D/g, '').slice(0, 5); });
+  form.elements.code.addEventListener('input', () => { const input = form.elements.code; const value = input.value; input.value = value.length > 10 ? value.replace(/[^a-f0-9]/gi, '').slice(0, 32) : value.replace(/\D/g, '').slice(0, 10); });
   form.addEventListener('submit', async (event) => {
     event.preventDefault(); error.textContent = ''; result.hidden = true;
     if (!form.reportValidity()) return;

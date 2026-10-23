@@ -9,6 +9,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/rate_limit.php';
 
 function order_json(array $payload, int $status = 200): never
 {
@@ -17,6 +18,17 @@ function order_json(array $payload, int $status = 200): never
     exit;
 }
 function order_text_length(string $value): int { return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value); }
+function order_replay(PDO $pdo, string $requestKey): ?array
+{
+    $find = $pdo->prepare('SELECT id,order_number,order_date,subtotal,shipping_fee,total FROM orders WHERE request_key=:request_key LIMIT 1');
+    $find->execute(['request_key' => $requestKey]);
+    $order = $find->fetch();
+    if (!$order) return null;
+    $itemsQuery = $pdo->prepare('SELECT product_title,quantity,line_total FROM order_items WHERE order_id=:id ORDER BY id');
+    $itemsQuery->execute(['id' => $order['id']]);
+    $items = array_map(static fn(array $item): array => ['title' => $item['product_title'], 'quantity' => (int)$item['quantity'], 'lineTotal' => (float)$item['line_total']], $itemsQuery->fetchAll());
+    return ['ok' => true, 'orderNumber' => $order['order_number'], 'orderDate' => $order['order_date'], 'items' => $items, 'subtotal' => (float)$order['subtotal'], 'shippingFee' => (float)$order['shipping_fee'], 'total' => (float)$order['total']];
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (empty($_SESSION['order_csrf'])) $_SESSION['order_csrf'] = bin2hex(random_bytes(32));
@@ -27,8 +39,25 @@ $submittedToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 if (!is_string($submittedToken) || empty($_SESSION['order_csrf']) || !hash_equals($_SESSION['order_csrf'], $submittedToken)) {
     order_json(['error' => 'Oturum doğrulaması geçersiz. Sayfayı yenileyin.'], 419);
 }
-$input = json_decode((string)file_get_contents('php://input'), true);
+ $input = json_decode((string)file_get_contents('php://input'), true);
 if (!is_array($input)) order_json(['error' => 'Sipariş verisi okunamadı.'], 400);
+$requestKey = (string)($input['requestKey'] ?? '');
+if (!preg_match('/^[a-f0-9]{32}$/i', $requestKey)) order_json(['error' => 'Sipariş isteği doğrulanamadı. Lütfen yeniden deneyin.'], 422);
+try {
+    $replay = order_replay($pdo, $requestKey);
+    if ($replay !== null) order_json($replay);
+} catch (Throwable $exception) {
+    error_log('Order idempotency lookup failed: ' . $exception->getMessage());
+    order_json(['error' => 'Sipariş hizmeti şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.'], 503);
+}
+try {
+    if (!rate_limit_consume($pdo, 'order-create-ip', rate_limit_client_ip(), 10, 600)) {
+        order_json(['error' => 'Çok sık sipariş isteği gönderildi. Lütfen daha sonra tekrar deneyin.'], 429);
+    }
+} catch (Throwable $exception) {
+    error_log('Order rate limit unavailable: ' . $exception->getMessage());
+    order_json(['error' => 'Sipariş hizmeti şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.'], 503);
+}
 $name = trim((string)($input['name'] ?? ''));
 $phone = trim((string)($input['phone'] ?? ''));
 $city = trim((string)($input['city'] ?? ''));
@@ -75,14 +104,14 @@ try {
     $totalCents = $subtotalCents + $feeCents;
 
     $orderDate = (string)$pdo->query('SELECT CURDATE()')->fetchColumn();
-    $sequence = $pdo->prepare('INSERT INTO order_code_sequences (order_date,last_value) VALUES (:order_date,LAST_INSERT_ID(100)) ON DUPLICATE KEY UPDATE last_value=LAST_INSERT_ID(GREATEST(last_value+1,100))');
-    $sequence->execute(['order_date' => $orderDate]);
-    $sequenceNumber = (int)$pdo->lastInsertId();
-    if ($sequenceNumber < 100 || $sequenceNumber > 99999) throw new DomainException('Bugün için sipariş kodu sınırına ulaşıldı. Lütfen WhatsApp üzerinden iletişime geçin.');
-    $trackingCode = str_pad((string)$sequenceNumber, 3, '0', STR_PAD_LEFT);
-    $orderNumber = 'KN' . date('ymd') . strtoupper(bin2hex(random_bytes(4)));
-    $insertOrder = $pdo->prepare('INSERT INTO orders (order_number,tracking_code,order_date,customer_name,phone,city,district,address,note,payment_method,subtotal,shipping_fee,total,status) VALUES (:number,:tracking_code,:order_date,:name,:phone,:city,:district,:address,:note,:payment,:subtotal,:shipping,:total,:status)');
-    $insertOrder->execute(['number' => $orderNumber, 'tracking_code' => $trackingCode, 'order_date' => $orderDate, 'name' => $name, 'phone' => $phone, 'city' => $city, 'district' => $district, 'address' => $address, 'note' => $note, 'payment' => $payment, 'subtotal' => number_format($subtotalCents / 100, 2, '.', ''), 'shipping' => number_format($feeCents / 100, 2, '.', ''), 'total' => number_format($totalCents / 100, 2, '.', ''), 'status' => 'pending_confirmation']);
+    $trackingCode = bin2hex(random_bytes(16));
+    $pdo->exec('INSERT IGNORE INTO public_order_code_sequence (id, last_value) VALUES (1, 99)');
+    $sequence = $pdo->query('SELECT last_value FROM public_order_code_sequence WHERE id=1 FOR UPDATE');
+    $orderNumber = (string)max(100, ((int)$sequence->fetchColumn()) + 1);
+    $nextCode = $pdo->prepare('UPDATE public_order_code_sequence SET last_value=:value WHERE id=1');
+    $nextCode->execute(['value' => $orderNumber]);
+    $insertOrder = $pdo->prepare('INSERT INTO orders (order_number,tracking_code,request_key,order_date,customer_name,phone,city,district,address,note,payment_method,subtotal,shipping_fee,total,status) VALUES (:number,:tracking_code,:request_key,:order_date,:name,:phone,:city,:district,:address,:note,:payment,:subtotal,:shipping,:total,:status)');
+    $insertOrder->execute(['number' => $orderNumber, 'tracking_code' => $trackingCode, 'request_key' => $requestKey, 'order_date' => $orderDate, 'name' => $name, 'phone' => $phone, 'city' => $city, 'district' => $district, 'address' => $address, 'note' => $note, 'payment' => $payment, 'subtotal' => number_format($subtotalCents / 100, 2, '.', ''), 'shipping' => number_format($feeCents / 100, 2, '.', ''), 'total' => number_format($totalCents / 100, 2, '.', ''), 'status' => 'pending_confirmation']);
     $orderId = (int)$pdo->lastInsertId();
     $insertItem = $pdo->prepare('INSERT INTO order_items (order_id,product_id,product_title,unit_price,quantity,line_total) VALUES (:order_id,:product_id,:title,:price,:quantity,:line_total)');
     $updateStock = $pdo->prepare('UPDATE products SET stock_qty = stock_qty - :quantity WHERE id = :id AND stock_qty IS NOT NULL AND stock_qty >= :quantity_check');
@@ -99,13 +128,20 @@ try {
         }
     }
     $pdo->commit();
-    unset($_SESSION['order_csrf']);
-    order_json(['ok' => true, 'orderNumber' => $trackingCode, 'orderDate' => $orderDate, 'items' => $responseItems, 'subtotal' => $subtotalCents / 100, 'shippingFee' => $feeCents / 100, 'total' => $totalCents / 100]);
+    order_json(['ok' => true, 'orderNumber' => $orderNumber, 'orderDate' => $orderDate, 'items' => $responseItems, 'subtotal' => $subtotalCents / 100, 'shippingFee' => $feeCents / 100, 'total' => $totalCents / 100]);
 } catch (DomainException $exception) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     order_json(['error' => $exception->getMessage()], 409);
 } catch (Throwable $exception) {
     if ($pdo->inTransaction()) $pdo->rollBack();
+    if ($exception instanceof PDOException && (string)$exception->getCode() === '23000') {
+        try {
+            $replay = order_replay($pdo, $requestKey);
+            if ($replay !== null) order_json($replay);
+        } catch (Throwable $lookupException) {
+            error_log('Order idempotency replay failed: ' . $lookupException->getMessage());
+        }
+    }
     error_log('Order create failed: ' . $exception->getMessage());
     order_json(['error' => 'Sipariş kaydedilemedi. Lütfen tekrar deneyin veya WhatsApp üzerinden bize ulaşın.'], 500);
 }

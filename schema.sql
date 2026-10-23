@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS products (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(180) NOT NULL,
+    slug VARCHAR(220) NOT NULL,
+    badges TEXT NULL,
     weight VARCHAR(80) NOT NULL DEFAULT '',
     chip VARCHAR(120) NOT NULL DEFAULT '',
     category_id INT UNSIGNED NULL,
@@ -23,11 +25,21 @@ CREATE TABLE IF NOT EXISTS products (
     image2 VARCHAR(255) NULL,
     image3 VARCHAR(255) NULL,
     stock_qty INT UNSIGNED NULL DEFAULT NULL,
+    is_new_harvest TINYINT(1) NOT NULL DEFAULT 0,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     INDEX idx_products_active (is_active),
-    INDEX idx_products_category (category_id)
+    INDEX idx_products_category (category_id),
+    UNIQUE KEY uq_products_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS product_slug_redirects (
+    slug VARCHAR(220) NOT NULL PRIMARY KEY,
+    product_id INT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_product_slug_redirect_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    INDEX idx_product_slug_redirect_id (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS admin_users (
@@ -35,6 +47,14 @@ CREATE TABLE IF NOT EXISTS admin_users (
     username VARCHAR(80) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS rate_limit_buckets (
+    bucket_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+    window_started_at BIGINT UNSIGNED NOT NULL,
+    request_count INT UNSIGNED NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_rate_limit_window (window_started_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO categories (name) VALUES ('Genel'), ('Kavrulmuş'), ('Çiğ'), ('Ezme'), ('Paketleme'), ('Avantaj Paketleri'), ('Vakumlu paket');
@@ -53,7 +73,8 @@ INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES
 CREATE TABLE IF NOT EXISTS orders (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     order_number VARCHAR(32) NOT NULL UNIQUE,
-    tracking_code VARCHAR(5) NULL,
+    tracking_code VARCHAR(32) NULL,
+    request_key CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL,
     order_date DATE NULL,
     customer_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
@@ -72,13 +93,20 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_orders_status (status),
     INDEX idx_orders_tracking (tracking_code, phone, order_date),
-    INDEX idx_orders_created (created_at)
+    INDEX idx_orders_created (created_at),
+    UNIQUE KEY uq_orders_request_key (request_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS order_code_sequences (
     order_date DATE PRIMARY KEY,
     last_value MEDIUMINT UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS public_order_code_sequence (
+    id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    last_value INT UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT IGNORE INTO public_order_code_sequence (id, last_value) VALUES (1, 99);
 
 CREATE TABLE IF NOT EXISTS order_items (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
