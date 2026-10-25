@@ -8,7 +8,7 @@ require_once __DIR__ . '/../config/db.php';
 try {
     $values = $pdo->query("SELECT setting_key, setting_value FROM store_settings WHERE setting_key IN ('free_shipping_limit', 'shipping_fee', 'low_stock_threshold')")->fetchAll(PDO::FETCH_KEY_PAIR);
     echo json_encode([
-        'freeShippingLimit' => isset($values['free_shipping_limit']) ? (float)$values['free_shipping_limit'] : 750,
+        'freeShippingLimit' => isset($values['free_shipping_limit']) ? (float)$values['free_shipping_limit'] : 2000,
         'shippingFee' => isset($values['shipping_fee']) ? (float)$values['shipping_fee'] : 60,
         'lowStockThreshold' => isset($values['low_stock_threshold']) ? (int)$values['low_stock_threshold'] : 5,
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);

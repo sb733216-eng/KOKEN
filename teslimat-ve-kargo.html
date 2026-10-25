@@ -37,8 +37,8 @@
 
 <h2>Kargo Ücreti</h2>
 <ul>
-  <li><strong>750 TL ve üzeri</strong> siparişlerde kargo <strong>ücretsizdir</strong>.</li>
-  <li>750 TL altındaki siparişlere <strong>60 TL</strong> kargo ücreti eklenir.</li>
+  <li><strong><span id="deliveryFreeShippingLimit">2.000 TL</span> ve üzeri</strong> siparişlerde kargo <strong>ücretsizdir</strong>.</li>
+  <li><span id="deliveryShippingLimit">2.000 TL</span> altındaki siparişlere <strong><span id="deliveryShippingFee">60 TL</span></strong> kargo ücreti eklenir.</li>
 </ul>
 
 <h2>Kargoya Veriliş</h2>
@@ -100,5 +100,21 @@
   <div class="footer__copy">© 2026 Köken Fındık · Kırma, Kavurma, Ezme, Paketleme. Tüm hakları saklıdır.</div>
 </footer>
 
+<script>
+(() => {
+  const money = value => Number(value).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL';
+  fetch('api/store-settings.php', { cache: 'no-store' })
+    .then(response => { if (!response.ok) throw new Error('Ayarlar yüklenemedi'); return response.json(); })
+    .then(settings => {
+      const limit = Number(settings.freeShippingLimit);
+      const fee = Number(settings.shippingFee);
+      if (!Number.isFinite(limit) || limit < 0 || !Number.isFinite(fee) || fee < 0) return;
+      document.querySelector('#deliveryFreeShippingLimit').textContent = money(limit);
+      document.querySelector('#deliveryShippingLimit').textContent = money(limit);
+      document.querySelector('#deliveryShippingFee').textContent = money(fee);
+    })
+    .catch(error => console.warn('Teslimat kargo ayarları yüklenemedi; varsayılan tutarlar gösteriliyor.', error));
+})();
+</script>
 </body>
 </html>

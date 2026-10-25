@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1c5a27">
+<meta name="robots" content="noindex,nofollow">
+<title>Siparişiniz Kaydedildi | Köken Fındık</title>
+<meta name="description" content="Köken Fındık siparişiniz kaydedildi. Sipariş numaranızla sipariş takibi yapabilirsiniz.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=20261026-order-confirmation">
+<script src="cookie-consent.js" defer></script>
+<style>
+.order-success{max-width:700px;margin:4rem auto;padding:2.5rem 1.25rem;text-align:center;background:var(--white);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 40px rgba(20,40,20,.08)}
+.order-success__icon{width:64px;height:64px;display:grid;place-items:center;margin:0 auto 1rem;border-radius:50%;background:var(--green);color:#fff;font-size:2rem}
+.order-success h1{color:var(--green);font-family:var(--head)}
+.order-success__code{display:inline-block;margin:1rem 0;padding:.65rem 1.15rem;background:var(--green-s);border-radius:10px;font-weight:700;font-size:1.25rem}
+.order-success__actions{display:flex;justify-content:center;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem}
+.order-success__notice{margin:1rem 0;padding:1rem;background:#fff4d6;border:1px solid #ead38d;border-radius:10px;color:#594915;text-align:left}
+.order-success__whatsapp{background:#147a3c;color:#fff}
+.order-success__whatsapp:hover{background:#0f6531;color:#fff}
+.order-success__status{min-height:1.5em}
+@media(max-width:560px){.order-success{margin:1.5rem auto;padding:1.5rem 1rem}.order-success__actions .btn{width:100%;min-height:48px}}
+</style>
+</head>
+<body>
+<header class="header sub-header"><div class="container header__inner"><a href="index.html" class="brand" aria-label="Köken Fındık ana sayfa"><img class="brand__logo" src="logo.jpg" alt="" width="56" height="56"><span class="brand__text"><span class="brand__name">Köken Fındık</span><span class="brand__slogan">Fındığın Kökünden Gelen Lezzet</span></span></a><a href="index.html" class="back-link">← Mağazaya dön</a></div></header>
+<main class="container">
+<section class="order-success" aria-labelledby="successTitle">
+<div class="order-success__icon" aria-hidden="true">✓</div>
+<h1 id="successTitle">Siparişiniz kaydedildi</h1>
+<p>Sipariş kaydınız veritabanına ulaştı. Bu kayıt, satıcının siparişi onayladığı anlamına gelmez.</p>
+<p id="orderCode" class="order-success__code" aria-live="polite"></p>
+<div class="order-success__notice"><strong>Siparişin işleme alınması için WhatsApp bildirimi gereklidir.</strong><br>Buton WhatsApp mesaj taslağını açar. Mesajı uygulamada sizin göndermeniz gerekir; bağlantıyı açmak mesajın gönderildiği veya siparişin onaylandığı anlamına gelmez. WhatsApp açılamazsa sipariş numaranız bu sayfada kalır ve butonu yeniden deneyebilirsiniz.</div>
+<p id="emailMessage" class="order-success__status" role="status" aria-live="polite"></p>
+<p id="sampleIbanNotice" class="order-success__notice" hidden>Havale/EFT seçtiyseniz, gösterilen IBAN test amaçlı örnektir; gerçek ödeme göndermeyin.</p>
+<div class="order-success__actions">
+<a id="whatsappOrder" class="btn order-success__whatsapp" href="#whatsappOrder" target="_blank" rel="noopener noreferrer" hidden>WhatsApp ile sipariş numaramı bildir</a>
+<a id="trackLink" class="btn btn--primary" href="siparis-takibi.html">Siparişimi takip et</a>
+<a class="btn btn--ghost" href="index.html#urunler">Alışverişe devam et</a>
+</div>
+<p class="mt-3">Sorunuz varsa <a href="https://wa.me/905313385955" target="_blank" rel="noopener noreferrer">WhatsApp üzerinden bize ulaşın</a>.</p>
+</section>
+</main>
+<footer class="footer"><div class="footer__copy">© 2026 Köken Fındık</div></footer>
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const order = params.get('order') || '';
+  const payment = params.get('payment') || '';
+  const email = params.get('email') || '';
+  const validCode = /^\d{3,10}$/.test(order);
+  const orderCode = document.getElementById('orderCode');
+  const emailMessage = document.getElementById('emailMessage');
+  const whatsapp = document.getElementById('whatsappOrder');
+  orderCode.textContent = validCode ? 'Sipariş numarası: #' + order : 'Sipariş numaranız sipariş kaydı sırasında gösterildi.';
+  document.getElementById('sampleIbanNotice').hidden = payment !== 'iban';
+  if (validCode) {
+    document.getElementById('trackLink').href = 'siparis-takibi.html?order=' + encodeURIComponent(order);
+    const message = 'Merhaba, #' + order + ' numaralı siparişimi kaydettim. Siparişimin onaylanmasını rica ederim.';
+    whatsapp.href = 'https://api.whatsapp.com/send?phone=905313385955&text=' + encodeURIComponent(message);
+    whatsapp.hidden = false;
+  }
+  if (email === 'sent') emailMessage.textContent = 'Sipariş özeti e-posta sunucusuna iletildi. Bu durum, e-postanın gelen kutusuna teslim edildiğini garanti etmez.';
+  else if (email === 'failed') emailMessage.textContent = 'E-posta gönderilemedi; sipariş kaydınız etkilenmedi. Sipariş numaranızı WhatsApp üzerinden bildirin.';
+  else emailMessage.textContent = 'E-posta bildirimi gönderim durumu şu anda doğrulanamadı. Sipariş kaydınız için yukarıdaki WhatsApp bildirim adımını tamamlayın.';
+})();
+</script>
+</body>
+</html>

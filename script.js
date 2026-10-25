@@ -1,16 +1,9 @@
 /* ===================== AYARLAR (kolayca değiştirilebilir) ===================== */
 // MySQL kataloğu ana kaynaktır; bağlantı kesilirse yedek kayıtlar satışa kapalı gösterilir.
 const WHATSAPP_NO = "905313385955"; // Ülke koduyla, + ve boşluk olmadan. Örn: 905321234567
-let FREE_SHIPPING_LIMIT = 750;       // Veritabanındaki mağaza ayarlarından yüklenir.
+let FREE_SHIPPING_LIMIT = 2000;      // Veritabanındaki mağaza ayarlarından yüklenir.
 let SHIPPING_FEE = 60;
 let LOW_STOCK_THRESHOLD = 5;
-
-// Havale/EFT bilgileri (ödeme adımında gösterilir) - buradan değiştirin
-const IBAN_INFO = {
-  bank: '',
-  holder: '',
-  iban: ''
-};
 
 // Kategori sekmesi adları
 const CAT_NAMES = { kavrulmus: 'Kavrulmuş', cig: 'Çiğ', ezme: 'Ezme', paketleme: 'Paketleme' };
@@ -35,90 +28,6 @@ const FALLBACK_PRODUCTS = [
     ing: 'Fındık içi.' }
 ];
 
-// 81 il ve tüm ilçeleri (il adı -> virgülle ayrılmış ilçeler)
-const IL_ILCE = {
-  'Adana': 'Aladağ,Ceyhan,Çukurova,Feke,İmamoğlu,Karaisalı,Karataş,Kozan,Pozantı,Saimbeyli,Sarıçam,Seyhan,Tufanbeyli,Yumurtalık,Yüreğir',
-  'Adıyaman': 'Besni,Çelikhan,Gerger,Gölbaşı,Kahta,Merkez,Samsat,Sincik,Tut',
-  'Afyonkarahisar': 'Başmakçı,Bayat,Bolvadin,Çay,Çobanlar,Dazkırı,Dinar,Emirdağ,Evciler,Hocalar,İhsaniye,İscehisar,Kızılören,Merkez,Sandıklı,Sinanpaşa,Sultandağı,Şuhut',
-  'Ağrı': 'Diyadin,Doğubayazıt,Eleşkirt,Hamur,Merkez,Patnos,Taşlıçay,Tutak',
-  'Aksaray': 'Ağaçören,Eskil,Gülağaç,Güzelyurt,Merkez,Ortaköy,Sarıyahşi,Sultanhanı',
-  'Amasya': 'Göynücek,Gümüşhacıköy,Hamamözü,Merkez,Merzifon,Suluova,Taşova',
-  'Ankara': 'Akyurt,Altındağ,Ayaş,Bala,Beypazarı,Çamlıdere,Çankaya,Çubuk,Elmadağ,Etimesgut,Evren,Gölbaşı,Güdül,Haymana,Kahramankazan,Kalecik,Keçiören,Kızılcahamam,Mamak,Nallıhan,Polatlı,Pursaklar,Sincan,Şereflikoçhisar,Yenimahalle',
-  'Antalya': 'Akseki,Aksu,Alanya,Demre,Döşemealtı,Elmalı,Finike,Gazipaşa,Gündoğmuş,İbradı,Kaş,Kemer,Kepez,Konyaaltı,Korkuteli,Kumluca,Manavgat,Muratpaşa,Serik',
-  'Ardahan': 'Çıldır,Damal,Göle,Hanak,Merkez,Posof',
-  'Artvin': 'Ardanuç,Arhavi,Borçka,Hopa,Kemalpaşa,Merkez,Murgul,Şavşat,Yusufeli',
-  'Aydın': 'Bozdoğan,Buharkent,Çine,Didim,Efeler,Germencik,İncirliova,Karacasu,Karpuzlu,Koçarlı,Köşk,Kuşadası,Kuyucak,Nazilli,Söke,Sultanhisar,Yenipazar',
-  'Balıkesir': 'Altıeylül,Ayvalık,Balya,Bandırma,Bigadiç,Burhaniye,Dursunbey,Edremit,Erdek,Gömeç,Gönen,Havran,İvrindi,Karesi,Kepsut,Manyas,Marmara,Savaştepe,Sındırgı,Susurluk',
-  'Bartın': 'Amasra,Kurucaşile,Merkez,Ulus',
-  'Batman': 'Beşiri,Gercüş,Hasankeyf,Kozluk,Merkez,Sason',
-  'Bayburt': 'Aydıntepe,Demirözü,Merkez',
-  'Bilecik': 'Bozüyük,Gölpazarı,İnhisar,Merkez,Osmaneli,Pazaryeri,Söğüt,Yenipazar',
-  'Bingöl': 'Adaklı,Genç,Karlıova,Kiğı,Merkez,Solhan,Yayladere,Yedisu',
-  'Bitlis': 'Adilcevaz,Ahlat,Güroymak,Hizan,Merkez,Mutki,Tatvan',
-  'Bolu': 'Dörtdivan,Gerede,Göynük,Kıbrıscık,Mengen,Merkez,Mudurnu,Seben,Yeniçağa',
-  'Burdur': 'Ağlasun,Altınyayla,Bucak,Çavdır,Çeltikçi,Gölhisar,Karamanlı,Kemer,Merkez,Tefenni,Yeşilova',
-  'Bursa': 'Büyükorhan,Gemlik,Gürsu,Harmancık,İnegöl,İznik,Karacabey,Keles,Kestel,Mudanya,Mustafakemalpaşa,Nilüfer,Orhaneli,Orhangazi,Osmangazi,Yenişehir,Yıldırım',
-  'Çanakkale': 'Ayvacık,Bayramiç,Biga,Bozcaada,Çan,Eceabat,Ezine,Gelibolu,Gökçeada,Lapseki,Merkez,Yenice',
-  'Çankırı': 'Atkaracalar,Bayramören,Çerkeş,Eldivan,Ilgaz,Kızılırmak,Korgun,Kurşunlu,Merkez,Orta,Şabanözü,Yapraklı',
-  'Çorum': 'Alaca,Bayat,Boğazkale,Dodurga,İskilip,Kargı,Laçin,Mecitözü,Merkez,Oğuzlar,Ortaköy,Osmancık,Sungurlu,Uğurludağ',
-  'Denizli': 'Acıpayam,Babadağ,Baklan,Bekilli,Beyağaç,Bozkurt,Buldan,Çal,Çameli,Çardak,Çivril,Güney,Honaz,Kale,Merkezefendi,Pamukkale,Sarayköy,Serinhisar,Tavas',
-  'Diyarbakır': 'Bağlar,Bismil,Çermik,Çınar,Çüngüş,Dicle,Eğil,Ergani,Hani,Hazro,Kayapınar,Kocaköy,Kulp,Lice,Silvan,Sur,Yenişehir',
-  'Düzce': 'Akçakoca,Cumayeri,Çilimli,Gölyaka,Gümüşova,Kaynaşlı,Merkez,Yığılca',
-  'Edirne': 'Enez,Havsa,İpsala,Keşan,Lalapaşa,Meriç,Merkez,Süloğlu,Uzunköprü',
-  'Elazığ': 'Ağın,Alacakaya,Arıcak,Baskil,Karakoçan,Keban,Kovancılar,Maden,Merkez,Palu,Sivrice',
-  'Erzincan': 'Çayırlı,İliç,Kemah,Kemaliye,Merkez,Otlukbeli,Refahiye,Tercan,Üzümlü',
-  'Erzurum': 'Aşkale,Aziziye,Çat,Hınıs,Horasan,İspir,Karaçoban,Karayazı,Köprüköy,Narman,Oltu,Olur,Palandöken,Pasinler,Pazaryolu,Şenkaya,Tekman,Tortum,Uzundere,Yakutiye',
-  'Eskişehir': 'Alpu,Beylikova,Çifteler,Günyüzü,Han,İnönü,Mahmudiye,Mihalgazi,Mihalıççık,Odunpazarı,Sarıcakaya,Seyitgazi,Sivrihisar,Tepebaşı',
-  'Gaziantep': 'Araban,İslahiye,Karkamış,Nizip,Nurdağı,Oğuzeli,Şahinbey,Şehitkamil,Yavuzeli',
-  'Giresun': 'Alucra,Bulancak,Çamoluk,Çanakçı,Dereli,Doğankent,Espiye,Eynesil,Görele,Güce,Keşap,Merkez,Piraziz,Şebinkarahisar,Tirebolu,Yağlıdere',
-  'Gümüşhane': 'Kelkit,Köse,Kürtün,Merkez,Şiran,Torul',
-  'Hakkâri': 'Çukurca,Derecik,Merkez,Şemdinli,Yüksekova',
-  'Hatay': 'Altınözü,Antakya,Arsuz,Belen,Defne,Dörtyol,Erzin,Hassa,İskenderun,Kırıkhan,Kumlu,Payas,Reyhanlı,Samandağ,Yayladağı',
-  'Iğdır': 'Aralık,Karakoyunlu,Merkez,Tuzluca',
-  'Isparta': 'Aksu,Atabey,Eğirdir,Gelendost,Gönen,Keçiborlu,Merkez,Senirkent,Sütçüler,Şarkikaraağaç,Uluborlu,Yalvaç,Yenişarbademli',
-  'İstanbul': 'Adalar,Arnavutköy,Ataşehir,Avcılar,Bağcılar,Bahçelievler,Bakırköy,Başakşehir,Bayrampaşa,Beşiktaş,Beykoz,Beylikdüzü,Beyoğlu,Büyükçekmece,Çatalca,Çekmeköy,Esenler,Esenyurt,Eyüpsultan,Fatih,Gaziosmanpaşa,Güngören,Kadıköy,Kağıthane,Kartal,Küçükçekmece,Maltepe,Pendik,Sancaktepe,Sarıyer,Silivri,Sultanbeyli,Sultangazi,Şile,Şişli,Tuzla,Ümraniye,Üsküdar,Zeytinburnu',
-  'İzmir': 'Aliağa,Balçova,Bayındır,Bayraklı,Bergama,Beydağ,Bornova,Buca,Çeşme,Çiğli,Dikili,Foça,Gaziemir,Güzelbahçe,Karabağlar,Karaburun,Karşıyaka,Kemalpaşa,Kınık,Kiraz,Konak,Menderes,Menemen,Narlıdere,Ödemiş,Seferihisar,Selçuk,Tire,Torbalı,Urla',
-  'Kahramanmaraş': 'Afşin,Andırın,Çağlayancerit,Dulkadiroğlu,Ekinözü,Elbistan,Göksun,Nurhak,Onikişubat,Pazarcık,Türkoğlu',
-  'Karabük': 'Eflani,Eskipazar,Merkez,Ovacık,Safranbolu,Yenice',
-  'Karaman': 'Ayrancı,Başyayla,Ermenek,Kazımkarabekir,Merkez,Sarıveliler',
-  'Kars': 'Akyaka,Arpaçay,Digor,Kağızman,Merkez,Sarıkamış,Selim,Susuz',
-  'Kastamonu': 'Abana,Ağlı,Araç,Azdavay,Bozkurt,Cide,Çatalzeytin,Daday,Devrekani,Doğanyurt,Hanönü,İhsangazi,İnebolu,Küre,Merkez,Pınarbaşı,Seydiler,Şenpazar,Taşköprü,Tosya',
-  'Kayseri': 'Akkışla,Bünyan,Develi,Felahiye,Hacılar,İncesu,Kocasinan,Melikgazi,Özvatan,Pınarbaşı,Sarıoğlan,Sarız,Talas,Tomarza,Yahyalı,Yeşilhisar',
-  'Kırıkkale': 'Bahşılı,Balışeyh,Çelebi,Delice,Karakeçili,Keskin,Merkez,Sulakyurt,Yahşihan',
-  'Kırklareli': 'Babaeski,Demirköy,Kofçaz,Lüleburgaz,Merkez,Pehlivanköy,Pınarhisar,Vize',
-  'Kırşehir': 'Akçakent,Akpınar,Boztepe,Çiçekdağı,Kaman,Merkez,Mucur',
-  'Kilis': 'Elbeyli,Merkez,Musabeyli,Polateli',
-  'Kocaeli': 'Başiskele,Çayırova,Darıca,Derince,Dilovası,Gebze,Gölcük,İzmit,Kandıra,Karamürsel,Kartepe,Körfez',
-  'Konya': 'Ahırlı,Akören,Akşehir,Altınekin,Beyşehir,Bozkır,Cihanbeyli,Çeltik,Çumra,Derbent,Derebucak,Doğanhisar,Emirgazi,Ereğli,Güneysınır,Hadim,Halkapınar,Hüyük,Ilgın,Kadınhanı,Karapınar,Karatay,Kulu,Meram,Sarayönü,Selçuklu,Seydişehir,Taşkent,Tuzlukçu,Yalıhüyük,Yunak',
-  'Kütahya': 'Altıntaş,Aslanapa,Çavdarhisar,Domaniç,Dumlupınar,Emet,Gediz,Hisarcık,Merkez,Pazarlar,Simav,Şaphane,Tavşanlı',
-  'Malatya': 'Akçadağ,Arapgir,Arguvan,Battalgazi,Darende,Doğanşehir,Doğanyol,Hekimhan,Kale,Kuluncak,Pütürge,Yazıhan,Yeşilyurt',
-  'Manisa': 'Ahmetli,Akhisar,Alaşehir,Demirci,Gölmarmara,Gördes,Kırkağaç,Köprübaşı,Kula,Salihli,Sarıgöl,Saruhanlı,Selendi,Soma,Şehzadeler,Turgutlu,Yunusemre',
-  'Mardin': 'Artuklu,Dargeçit,Derik,Kızıltepe,Mazıdağı,Midyat,Nusaybin,Ömerli,Savur,Yeşilli',
-  'Mersin': 'Akdeniz,Anamur,Aydıncık,Bozyazı,Çamlıyayla,Erdemli,Gülnar,Mezitli,Mut,Silifke,Tarsus,Toroslar,Yenişehir',
-  'Muğla': 'Bodrum,Dalaman,Datça,Fethiye,Kavaklıdere,Köyceğiz,Marmaris,Menteşe,Milas,Ortaca,Seydikemer,Ula,Yatağan',
-  'Muş': 'Bulanık,Hasköy,Korkut,Malazgirt,Merkez,Varto',
-  'Nevşehir': 'Acıgöl,Avanos,Derinkuyu,Gülşehir,Hacıbektaş,Kozaklı,Merkez,Ürgüp',
-  'Niğde': 'Altunhisar,Bor,Çamardı,Çiftlik,Merkez,Ulukışla',
-  'Ordu': 'Akkuş,Altınordu,Aybastı,Çamaş,Çatalpınar,Çaybaşı,Fatsa,Gölköy,Gülyalı,Gürgentepe,İkizce,Kabadüz,Kabataş,Korgan,Kumru,Mesudiye,Perşembe,Ulubey,Ünye',
-  'Osmaniye': 'Bahçe,Düziçi,Hasanbeyli,Kadirli,Merkez,Sumbas,Toprakkale',
-  'Rize': 'Ardeşen,Çamlıhemşin,Çayeli,Derepazarı,Fındıklı,Güneysu,Hemşin,İkizdere,İyidere,Kalkandere,Merkez,Pazar',
-  'Sakarya': 'Adapazarı,Akyazı,Arifiye,Erenler,Ferizli,Geyve,Hendek,Karapürçek,Karasu,Kaynarca,Kocaali,Pamukova,Sapanca,Serdivan,Söğütlü,Taraklı',
-  'Samsun': '19 Mayıs,Alaçam,Asarcık,Atakum,Ayvacık,Bafra,Canik,Çarşamba,Havza,İlkadım,Kavak,Ladik,Salıpazarı,Tekkeköy,Terme,Vezirköprü,Yakakent',
-  'Siirt': 'Baykan,Eruh,Kurtalan,Merkez,Pervari,Şirvan,Tillo',
-  'Sinop': 'Ayancık,Boyabat,Dikmen,Durağan,Erfelek,Gerze,Merkez,Saraydüzü,Türkeli',
-  'Sivas': 'Akıncılar,Altınyayla,Divriği,Doğanşar,Gemerek,Gölova,Gürün,Hafik,İmranlı,Kangal,Koyulhisar,Merkez,Suşehri,Şarkışla,Ulaş,Yıldızeli,Zara',
-  'Şanlıurfa': 'Akçakale,Birecik,Bozova,Ceylanpınar,Eyyübiye,Halfeti,Haliliye,Harran,Hilvan,Karaköprü,Siverek,Suruç,Viranşehir',
-  'Şırnak': 'Beytüşşebap,Cizre,Güçlükonak,İdil,Merkez,Silopi,Uludere',
-  'Tekirdağ': 'Çerkezköy,Çorlu,Ergene,Hayrabolu,Kapaklı,Malkara,Marmaraereğlisi,Muratlı,Saray,Süleymanpaşa,Şarköy',
-  'Tokat': 'Almus,Artova,Başçiftlik,Erbaa,Merkez,Niksar,Pazar,Reşadiye,Sulusaray,Turhal,Yeşilyurt,Zile',
-  'Trabzon': 'Akçaabat,Araklı,Arsin,Beşikdüzü,Çarşıbaşı,Çaykara,Dernekpazarı,Düzköy,Hayrat,Köprübaşı,Maçka,Of,Ortahisar,Sürmene,Şalpazarı,Tonya,Vakfıkebir,Yomra',
-  'Tunceli': 'Çemişgezek,Hozat,Mazgirt,Merkez,Nazımiye,Ovacık,Pertek,Pülümür',
-  'Uşak': 'Banaz,Eşme,Karahallı,Merkez,Sivaslı,Ulubey',
-  'Van': 'Bahçesaray,Başkale,Çaldıran,Çatak,Edremit,Erciş,Gevaş,Gürpınar,İpekyolu,Muradiye,Özalp,Saray,Tuşba',
-  'Yalova': 'Altınova,Armutlu,Çiftlikköy,Çınarcık,Merkez,Termal',
-  'Yozgat': 'Akdağmadeni,Aydıncık,Boğazlıyan,Çandır,Çayıralan,Çekerek,Kadışehri,Merkez,Saraykent,Sarıkaya,Sorgun,Şefaatli,Yenifakılı,Yerköy',
-  'Zonguldak': 'Alaplı,Çaycuma,Devrek,Ereğli,Gökçebey,Kilimli,Kozlu,Merkez'
-};
 
 /* ============================================================================== */
 
@@ -232,9 +141,11 @@ const IL_ILCE = {
       const threshold = Number(settings.lowStockThreshold);
       if (Number.isFinite(threshold) && threshold >= 0) LOW_STOCK_THRESHOLD = threshold;
       const headline = $('#freeShippingHeadline');
-      if (headline) headline.textContent = `${fmt(FREE_SHIPPING_LIMIT)} Üzeri Siparişlerde Kargo Ücretsiz`;
+      if (headline) headline.textContent = `${fmt(FREE_SHIPPING_LIMIT)} ve Üzeri Siparişlerde Kargo Ücretsiz`;
       const faqLimit = $('#shippingFaqLimit');
       if (faqLimit) faqLimit.textContent = fmt(FREE_SHIPPING_LIMIT);
+      const topShipping = $('#topShippingText');
+      if (topShipping) topShipping.textContent = `${fmt(FREE_SHIPPING_LIMIT)} ve Üzeri Siparişlerde Kargo Ücretsiz! | Doğrudan Üreticiden Taze Karadeniz Fındığı`;
       const faqFee = $('#shippingFaqFee');
       if (faqFee) faqFee.textContent = fmt(SHIPPING_FEE);
     } catch (err) {
@@ -255,7 +166,6 @@ const IL_ILCE = {
           cat: slug(p.category),
           catLabel: String(p.category || 'Genel'),
           name: String(p.title || ''),
-          slug: String(p.slug || ''),
           badges: Array.isArray(p.badges) ? p.badges.map(String) : [],
           weight: String(p.weight || ''),
           chip: String(p.chip || ''),
@@ -301,7 +211,7 @@ const IL_ILCE = {
           ...(p.stockQty === 0 ? {} : { price: String(p.price) }),
           availability: p.stockQty === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
           itemCondition: 'https://schema.org/NewCondition',
-          url: abs(`urun/${encodeURIComponent(p.slug || `urun-${p.id}`)}`)
+          url: abs('index.html#urunler')
         }
       })));
     }
@@ -388,7 +298,7 @@ const IL_ILCE = {
       </div>
       <div class="card__body">
         <span class="chip">${esc(p.chip || p.weight || 'Fındık')}</span>
-        <h3><a class="product-detail-link" href="urun/${encodeURIComponent(p.slug || `urun-${id}`)}">${esc(p.name)}</a></h3>
+        <h3>${esc(p.name)}</h3>
         ${badgeHTML(p, 'badges--sm')}
         <div class="card__bottom">
                    ${priceHTML(p)}
@@ -429,7 +339,7 @@ const IL_ILCE = {
     const dec = e.target.closest('[data-dec]');
     if (dec) { changeCartQty(dec.dataset.dec, -1); return; }
     const v = e.target.closest('[data-view]');
-    if (v) openDetail(v.dataset.view);
+    if (v) openDetail(v.dataset.view, v);
   });
 
   function flash(btn) {
@@ -573,7 +483,14 @@ const IL_ILCE = {
     const up = sub > 0 && sub < FREE_SHIPPING_LIMIT ? pickUpsell() : null;
     upsellId = up ? up.id : null;
     $('#upsell').hidden = !up;
-      if (up) $('#upsellText').innerHTML = `<span class="upsell__lead">Ücretsiz kargo hakkı için sepete</span> <strong class="upsell__name">${esc(label(up))}</strong> <span class="upsell__price">${fmt(up.price)}</span> <span class="upsell__lead">eklemek ister misiniz?</span>`;
+    if (up) {
+      const remaining = money(FREE_SHIPPING_LIMIT - sub - up.price);
+      $('#upsellText').textContent = remaining > 0
+        ? `Bu ürünü eklerseniz ücretsiz kargoya ${fmt(remaining)} kalır.`
+        : 'Bu ürünü ekleyin, kargonuz ücretsiz olsun.';
+      $('#upsellName').textContent = label(up);
+      $('#upsellPrice').textContent = fmt(up.price);
+    }
     syncCardControls();
   }
 
@@ -594,62 +511,145 @@ const IL_ILCE = {
 
   /* ---------- Çekmece & modallar ---------- */
   const drawer = $('#drawer'), overlay = $('#overlay');
-  const lock = () => document.body.classList.toggle('no-scroll', !!document.querySelector('.drawer.on, .modal.on'));
+  const backgroundState = new Map();
+
+  function currentDialog() {
+    const openModals = $$('.modal.on');
+    if (openModals.length) return openModals[openModals.length - 1].querySelector('[role="dialog"]') || openModals[openModals.length - 1];
+    return drawer.classList.contains('on') ? drawer : null;
+  }
+
+  function syncOverlayState() {
+    const openModals = $$('.modal.on');
+    const topModal = openModals[openModals.length - 1] || null;
+    const drawerOpen = drawer.classList.contains('on');
+    const locked = Boolean(topModal || drawerOpen);
+    const allowed = new Set();
+    if (topModal) allowed.add(topModal);
+    else if (drawerOpen) { allowed.add(drawer); allowed.add(overlay); }
+    document.body.classList.toggle('overlay-open', locked);
+    document.body.classList.toggle('no-scroll', locked);
+    Array.from(document.body.children).forEach((element) => {
+      const shouldInert = locked && !allowed.has(element);
+      if (shouldInert) {
+        if (!backgroundState.has(element)) backgroundState.set(element, { inert: element.inert, ariaHidden: element.getAttribute('aria-hidden') });
+        element.inert = true;
+        element.setAttribute('aria-hidden', 'true');
+      } else if (backgroundState.has(element)) {
+        const previous = backgroundState.get(element);
+        element.inert = previous.inert;
+        if (previous.ariaHidden === null) element.removeAttribute('aria-hidden');
+        else element.setAttribute('aria-hidden', previous.ariaHidden);
+        backgroundState.delete(element);
+      }
+    });
+    const hideWhatsApp = locked;
+    [$('#waIsland'), $('#mbarWhatsApp')].filter(Boolean).forEach((link) => {
+      link.hidden = hideWhatsApp;
+      link.inert = hideWhatsApp;
+      if (hideWhatsApp) link.setAttribute('aria-hidden', 'true');
+      else link.removeAttribute('aria-hidden');
+    });
+  }
+
+  function focusableWithin(layer) {
+    return Array.from(layer.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+      .filter((element) => !element.closest('[hidden],[inert]') && element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden');
+  }
+
+  function focusLayer(layer) {
+    if (!layer) return;
+    const focusInside = () => {
+      if (!layer.isConnected || layer.closest('[hidden]')) return;
+      const target = focusableWithin(layer)[0] || layer;
+      if (target === layer && !layer.hasAttribute('tabindex')) layer.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+    };
+    focusInside();
+    // Reassert after the modal's display/visibility transition and the opener's click default action.
+    window.setTimeout(() => {
+      if (!layer.contains(document.activeElement)) focusInside();
+    }, 0);
+  }
+
+  function restoreFocus(opener, context) {
+    if (opener instanceof HTMLElement && opener.isConnected && !opener.closest('[inert],[hidden]')) {
+      opener.focus({ preventScroll: true });
+      if (document.activeElement === opener) return;
+    }
+    const fallback = context === 'detail' ? ($('#productSearch') || $('#openCart')) : ($('#openCart') || $('#productSearch'));
+    if (fallback) fallback.focus({ preventScroll: true });
+  }
 
   function openDrawer() {
     drawer._returnFocusElement = document.activeElement;
-    drawer.classList.add('on'); overlay.classList.add('on');
-    drawer.setAttribute('aria-hidden', 'false'); lock();
-    $('#closeCart').focus({ preventScroll: true });
+    drawer.classList.add('on');
+    overlay.classList.add('on');
+    drawer.setAttribute('aria-hidden', 'false');
+    syncOverlayState();
+    focusLayer(drawer);
   }
 
   hideToast();
 
   function closeDrawer() {
+    if (!drawer.classList.contains('on')) return;
     const opener = drawer._returnFocusElement;
-    drawer.classList.remove('on'); overlay.classList.remove('on');
-    drawer.setAttribute('aria-hidden', 'true'); lock();
-    if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true });
+    drawer.classList.remove('on');
+    overlay.classList.remove('on');
+    drawer.setAttribute('aria-hidden', 'true');
+    syncOverlayState();
+    restoreFocus(opener, 'drawer');
   }
-  function openModal(id) {
-    const m = $('#' + id);
-    if (!m) return;
-    m._returnFocusElement = document.activeElement;
-    m.classList.add('on'); m.setAttribute('aria-hidden', 'false'); lock();
-    const f = m.querySelector('input:not([disabled]),select:not([disabled]),button:not([disabled]),a[href]');
-    if (f) f.focus({ preventScroll: true });
+
+  function openModal(id, opener = document.activeElement) {
+    const modal = $('#' + id);
+    if (!modal) return;
+    modal._returnFocusElement = opener instanceof HTMLElement ? opener : document.activeElement;
+    modal.classList.add('on');
+    modal.setAttribute('aria-hidden', 'false');
+    syncOverlayState();
+    focusLayer(currentDialog());
   }
-  function closeModal(m) {
-    if (!m) return;
-    const opener = m._returnFocusElement;
-    m.classList.remove('on'); m.setAttribute('aria-hidden', 'true'); lock();
-    if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true });
+
+  function closeModal(modal) {
+    if (!modal || !modal.classList.contains('on')) return;
+    const opener = modal._returnFocusElement;
+    const context = modal.id === 'detail' ? 'detail' : 'modal';
+    modal.classList.remove('on');
+    modal.setAttribute('aria-hidden', 'true');
+    syncOverlayState();
+    restoreFocus(opener, context);
   }
 
   $('#openCart').addEventListener('click', openDrawer);
-    $('#mbarCart').addEventListener('click', openDrawer);
+  $('#mbarCart').addEventListener('click', openDrawer);
   $('#closeCart').addEventListener('click', closeDrawer);
   overlay.addEventListener('click', closeDrawer);
-  document.addEventListener('click', (e) => {
-    const c = e.target.closest('[data-close]');
-    if (c) closeModal(c.closest('.modal'));
+  document.addEventListener('click', (event) => {
+    const closeButton = event.target.closest('[data-close]');
+    if (closeButton) closeModal(closeButton.closest('.modal'));
   });
-  document.addEventListener('keydown', (e) => {
-    const open = $$('.modal.on');
-    const modal = open[open.length - 1];
-    const activeLayer = modal || (drawer.classList.contains('on') ? drawer : null);
-    if (e.key === 'Tab' && activeLayer) {
-      const focusable = Array.from(activeLayer.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter((el) => el.offsetParent !== null);
-      if (!focusable.length) { e.preventDefault(); return; }
+  document.addEventListener('focusin', (event) => {
+    const layer = currentDialog();
+    if (layer && !layer.contains(event.target)) focusLayer(layer);
+  });
+  document.addEventListener('keydown', (event) => {
+    const openModals = $$('.modal.on');
+    const activeLayer = currentDialog();
+    if (event.key === 'Tab' && activeLayer) {
+      const focusable = focusableWithin(activeLayer);
+      if (!focusable.length) { event.preventDefault(); focusLayer(activeLayer); return; }
       const first = focusable[0], last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      const index = focusable.indexOf(document.activeElement);
+      if (event.shiftKey && index <= 0) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (index === -1 || index === focusable.length - 1)) { event.preventDefault(); first.focus(); }
       return;
     }
-    if (e.key !== 'Escape') return;
-    if (open.length) closeModal(open[open.length - 1]); else closeDrawer();
-  });
-  window.addEventListener('storage', (e) => { if (e.key === KEY) { cart = load(); render(); } });
+    if (event.key !== 'Escape') return;
+    if (openModals.length) closeModal(openModals[openModals.length - 1]);
+    else if (drawer.classList.contains('on')) closeDrawer();
+  });  window.addEventListener('storage', (e) => { if (e.key === KEY) { cart = load(); render(); } });
 
 
   /* ---------- Rozetler ve SSS ---------- */
@@ -750,7 +750,7 @@ const IL_ILCE = {
     selectThumb(ts[(i + 1) % ts.length]);
   });
 
-  function openDetail(id) {
+  function openDetail(id, opener = document.activeElement) {
     const p = byId.get(id);
     if (!p) return;
     dId = id; dQty = 1;
@@ -798,7 +798,7 @@ const IL_ILCE = {
 
     $('.detail').scrollTop = 0;
     syncDetailQty();
-    openModal('detail');
+    openModal('detail', opener);
   }
 
   $('#dMinus').addEventListener('click', () => { dQty = Math.max(1, dQty - 1); syncDetailQty(); });
@@ -867,7 +867,7 @@ const IL_ILCE = {
       <p>Kırma, kavurma, ezme ve paketleme işlemleri kendi tesisimizde yapılır.</p>
       <p>[Tesis adresi, kapasite, hijyen ve kalite belgeleri buraya yazılabilir.]</p>` },
     takip: { title: 'Sipariş Takibi', html: NOTE + `
-      <p>Siparişiniz kaydedildikten sonra kısa sipariş numarası ve siparişte kullandığınız telefonla <a href="siparis-takibi.html">Sipariş Takibi</a> sayfasından durumunu kontrol edebilirsiniz. İsterseniz WhatsApp üzerinden de bize ulaşabilirsiniz.</p>
+      <p>Siparişiniz kaydedildikten sonra kısa sipariş numarası ve siparişte kullandığınız telefonla <a href="siparis-takibi.html">Sipariş Takibi</a> sayfasından durumunu kontrol edebilirsiniz. Siparişin işleme alınması için sipariş numaranızı WhatsApp üzerinden satıcıya bildirmeniz gerekir.</p>
       <p>Kargoya verildiğinde takip numaranız tarafınıza iletilir.</p>` },
     satis: { title: 'Mesafeli Satış Sözleşmesi', html: NOTE + `
       <h4>Madde 1 – Taraflar</h4>
@@ -896,245 +896,12 @@ const IL_ILCE = {
     openModal('legal');
   });
 
-  /* ---------- Teslimat formu ---------- */
-  const form = $('#orderForm'), errEl = $('#formErr');
-
   $('#checkoutBtn').addEventListener('click', () => {
-    const ls = lines();
-    if (!ls.length) return;
-    const { ship, total } = totals();
-    $('#coList').innerHTML = ls.map((l) => `<li><span>${esc(label(l.p))} × ${l.qty}</span><span>${fmt(l.p.price * l.qty)}</span></li>`).join('');
-    const cs = $('#coShip');
-    cs.textContent = ship ? fmt(ship) : 'Ücretsiz';
-    cs.classList.toggle('free', !ship);
-    $('#coTotal').textContent = fmt(total);
-      showStep(1);
-    closeDrawer();
-    openModal('checkout');
-  });
-
-  /* ---------- İl / İlçe seçimi ---------- */
-  const citySel = form.elements.city, distSel = form.elements.district;
-  const trSort = (a, b) => a.localeCompare(b, 'tr');
-  const has = (c) => Object.prototype.hasOwnProperty.call(IL_ILCE, c);
-  const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t || v; return o; };
-
-  function fillDistricts(city) {
-    distSel.replaceChildren(opt('', city ? 'İlçe seçin' : 'Önce il seçin'));
-    distSel.disabled = !city;
-    if (city && has(city)) IL_ILCE[city].split(',').sort(trSort).forEach((d) => distSel.append(opt(d)));
-  }
-  citySel.replaceChildren(opt('', 'İl seçin'), ...Object.keys(IL_ILCE).sort(trSort).map((c) => opt(c)));
-  citySel.addEventListener('change', () => fillDistricts(citySel.value));
-  fillDistricts('');
-
-   /* ---------- 2 adımlı sipariş: 1) teslimat bilgileri  2) ödeme seçimi ---------- */
-  const PAY_LABELS = { iban: 'Havale/EFT', kapida: 'Kapıda Ödeme' };
-  let step = 1;
-  let copyTimer = null;
-
-
-    // Telefon: yalnızca rakam, en fazla 11 hane (05XXXXXXXXX)
-  const phoneEl = form.elements.phone;
-  phoneEl.addEventListener('input', () => {
-    const clean = phoneEl.value.replace(/\D/g, '').slice(0, 11);
-    if (phoneEl.value !== clean) phoneEl.value = clean;
-  });
-  phoneEl.addEventListener('paste', (e) => {
-    e.preventDefault();
-    let d = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\D/g, '');
-    if (d.length === 12 && d.startsWith('90')) d = '0' + d.slice(2); // +90 5xx... -> 05xx...
-    phoneEl.value = d.slice(0, 11);
-    phoneEl.classList.remove('bad');
-  });
-
-  $('#ibanBank').textContent = IBAN_INFO.bank;
-  $('#ibanHolder').textContent = IBAN_INFO.holder;
-  $('#ibanNo').textContent = IBAN_INFO.iban;
-  const ibanValue = IBAN_INFO.iban.replace(/\s+/g, '').toUpperCase();
-  const ibanConfigured = Boolean(IBAN_INFO.bank.trim() && IBAN_INFO.holder.trim()
-    && /^TR\d{24}$/.test(ibanValue) && !/^TR0{24}$/.test(ibanValue));
-  $('#ibanChoice input').disabled = !ibanConfigured;
-  $('#ibanUnavailable').hidden = ibanConfigured;
-
-  function showStep(n) {
-    step = n;
-    $('#stepInfo').hidden = n !== 1;
-    $('#stepPay').hidden = n !== 2;
-    $('#coTitle').textContent = n === 1 ? 'Teslimat bilgileri (1/2)' : 'Ödeme seçimi (2/2)';
-    errEl.textContent = '';
-    $('#payErr').textContent = '';
-    const body = $('#checkout .modal__body');
-    if (body) body.scrollTop = 0;
-  }
-
-  function readValues() {
-    const v = {};
-    ['name', 'phone', 'city', 'district', 'address', 'note'].forEach((k) => {
-      v[k] = form.elements[k].value.replace(/\s+/g, ' ').trim();
-    });
-    return v;
-  }
-
-  // 1. adım doğrulaması
-  function readInfo() {
-    errEl.textContent = '';
-    const v = readValues();
-    let bad = null;
-    ['name', 'phone', 'city', 'district', 'address'].forEach((k) => {
-      const el = form.elements[k];
-      const ok = v[k] && el.checkValidity();
-      el.classList.toggle('bad', !ok);
-      if (!ok && !bad) bad = el;
-    });
-    if (!bad && !(has(v.city) && IL_ILCE[v.city].split(',').includes(v.district))) { bad = citySel; citySel.classList.add('bad'); }
-    if (bad) {
-            errEl.textContent = bad === form.elements.phone
-        ? 'Telefon numarası 05 ile başlayan 11 haneli olmalıdır (örn. 05313385955). Harf ve özel karakter kullanmayın.'
-        : 'Lütfen zorunlu alanları eksiksiz ve doğru doldurun.';
-      bad.focus();
-      return null;
-    }
-    return v;
-  }
-
-  function goToPay() {
-    if (!readInfo()) return;
-    showStep(2);
-    const first = $('#stepPay input[name="pay"]:not(:disabled)');
-    if (first) first.focus({ preventScroll: true });
-  }
-
-  $('#toPayBtn').addEventListener('click', goToPay);
-  $('#backBtn').addEventListener('click', () => { showStep(1); form.elements.name.focus({ preventScroll: true }); });
-
-  $$('input[name="pay"]').forEach((r) => r.addEventListener('change', () => {
-    $('#ibanBox').hidden = form.elements.pay.value !== 'iban';
-    $('#payErr').textContent = '';
-  }));
-
-  // IBAN'ı boşluksuz kopyalar (banka uygulamaları için en güvenlisi)
-  $('#ibanCopy').addEventListener('click', async () => {
-    const btn = $('#ibanCopy');
-    const text = IBAN_INFO.iban.replace(/\s+/g, '');
-    let ok = false;
-    try { await navigator.clipboard.writeText(text); ok = true; }
-    catch (err) { // clipboard API yoksa/izin yoksa eski yöntem
-      const ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
-      ta.remove();
-    }
-    btn.textContent = ok ? 'Kopyalandı ✓' : 'Kopyalanamadı, IBAN\'ı elle seçin';
-    btn.classList.toggle('copied', ok);
-    clearTimeout(copyTimer);
-    copyTimer = setTimeout(() => { btn.textContent = 'IBAN\'ı Kopyala'; btn.classList.remove('copied'); }, 2000);
-  });
-
-  /* ---------- Sipariş sonrası isteğe bağlı WhatsApp bildirimi ---------- */
-  function buildMessage(v, order) {
-    const items = order.items.map((item) => `• ${item.quantity}x ${item.title} - ${fmt(item.lineTotal)}`);
-    return [
-      '*KÖKEN FINDIK - YENİ SİPARİŞ* 🌰',
-      `*Sipariş No:* ${order.orderNumber}`,
-      `*Tarih:* ${order.orderDate}`,
-      SEP,
-      '*Sipariş Kalemleri:*',
-      ...items,
-      SEP,
-      `*Ara Toplam:* ${fmt(order.subtotal)}`,
-      `*Kargo:* ${order.shippingFee ? fmt(order.shippingFee) : 'Ücretsiz'}`,
-      `*Genel Toplam:* ${fmt(order.total)}`,
-      SEP,
-      '*Teslimat Bilgileri:*',
-      `*Alıcı:* ${v.name}`,
-      `*Telefon:* ${v.phone}`,
-      `*Adres:* ${v.address} - ${v.district} / ${v.city}`,
-      `*Not:* ${v.note || '-'}`,
-      `*Ödeme Tercihi:* ${v.pay}`
-    ].join('\n');
-  }
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!lines().length) return;
-    if (step === 1) { goToPay(); return; } // 1. adımda Enter: ödeme adımına geç
-
-    const pay = form.elements.pay.value;
-    if (!pay) { $('#payErr').textContent = 'Lütfen bir ödeme yöntemi seçin.'; return; }
-
-    const v = readValues();
-    v.pay = PAY_LABELS[pay];
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalSubmitMarkup = submitButton.innerHTML;
-    const requestPayload = { ...v, payment: pay, items: lines().map((line) => ({ id: line.p.id, qty: line.qty })) };
-    const requestSignature = JSON.stringify(requestPayload);
-    const orderKeyStorage = 'koken-pending-order';
-    let requestKey = '';
-    let requestFingerprint = '';
-    try {
-      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(requestSignature));
-      requestFingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-    } catch (storageError) { /* Tarayıcı kriptografisi yoksa anahtar yalnızca bellekte kalır. */ }
-    try {
-      const saved = requestFingerprint ? JSON.parse(localStorage.getItem(orderKeyStorage) || 'null') : null;
-      if (saved && saved.fingerprint === requestFingerprint && /^[a-f0-9]{32}$/i.test(saved.key)) requestKey = saved.key;
-    } catch (storageError) { /* Depolama kapalıysa bu gönderim için yeni anahtar kullanılır. */ }
-    if (!requestKey) {
-      const bytes = new Uint8Array(16);
-      crypto.getRandomValues(bytes);
-      requestKey = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-      try { if (requestFingerprint) localStorage.setItem(orderKeyStorage, JSON.stringify({ fingerprint: requestFingerprint, key: requestKey })); } catch (storageError) { /* Depolama kapalı. */ }
-    }
-    submitButton.disabled = true;
-    submitButton.setAttribute('aria-busy', 'true');
-    submitButton.textContent = 'Sipariş kaydediliyor…';
-    $('#payErr').textContent = 'Sipariş kaydediliyor…';
-    try {
-      const tokenResponse = await fetch('api/orders.php', { cache: 'no-store' });
-      if (!tokenResponse.ok) throw new Error('Sipariş doğrulaması başlatılamadı.');
-      const tokenData = await tokenResponse.json();
-      const orderResponse = await fetch('api/orders.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': tokenData.csrfToken },
-        body: JSON.stringify({ ...requestPayload, requestKey })
-      });
-      const order = await orderResponse.json();
-      if (!orderResponse.ok) throw new Error(order.error || 'Sipariş kaydedilemedi.');
-      try {
-        const saved = JSON.parse(localStorage.getItem(orderKeyStorage) || 'null');
-        if (saved && saved.key === requestKey) localStorage.removeItem(orderKeyStorage);
-      } catch (storageError) { /* Depolama kapalı. */ }
-      const canNotifyOnWhatsApp = /^\d{10,15}$/.test(WHATSAPP_NO);
-      const url = canNotifyOnWhatsApp
-        ? `https://api.whatsapp.com/send?phone=${WHATSAPP_NO}&text=${encodeURIComponent(buildMessage(v, order))}`
-        : '#';
-
-      $('#sentTitle').textContent = `Siparişiniz kaydedildi · ${order.orderNumber}`;
-      $('#sent .modal__body > p:first-of-type').textContent = 'Siparişiniz sisteme kaydedildi. Sipariş numaranızı not edin; dilerseniz sipariş bilgilerinizi WhatsApp üzerinden satıcıya ayrıca iletebilirsiniz.';
-      cart = [];
-      commit();
-      form.reset();
-      fillDistricts('');
-      $('#ibanBox').hidden = true;
-      showStep(1);
-      $$('.form .bad').forEach((x) => x.classList.remove('bad'));
-      $('#waFallback').href = url;
-      $('#waFallback').hidden = !canNotifyOnWhatsApp;
-      closeModal($('#checkout'));
-      openModal('sent');
-    } catch (error) {
-      $('#payErr').textContent = error.message || 'Sipariş kaydedilemedi.';
-    } finally { submitButton.disabled = false; submitButton.removeAttribute('aria-busy'); submitButton.innerHTML = originalSubmitMarkup; }
-  });
-  form.addEventListener('input', (e) => e.target.classList.remove('bad'));
-
-
-  
-
-  
-  render();
+    const items = lines();
+    if (!items.length) return;
+    save();
+    window.location.assign('siparis-tamamla.html');
+  });render();
   Promise.all([loadStoreSettings(), loadCatalog()]).then(([, products]) => {
     setProducts(products);
     const addId = new URLSearchParams(location.search).get('add_to_cart');

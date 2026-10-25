@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1c5a27">
+<meta name="robots" content="noindex,nofollow">
+<title>Siparişi Tamamla | Köken Fındık</title>
+<meta name="description" content="Teslimat bilgilerinizi girin ve siparişinizi tamamlayın.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=20261025-mobile-modal-checkout">
+<script src="cookie-consent.js" defer></script>
+<style>
+.checkout-page{padding:2rem 0 4rem}
+.checkout-page__intro{max-width:760px;margin:0 auto 1.2rem}
+.checkout-grid{max-width:1000px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.75fr);gap:1.25rem;align-items:start}
+.checkout-card{padding:1.2rem;background:var(--white);border:1px solid var(--line);border-radius:16px}
+.checkout-card h2{font-family:var(--head);color:var(--green);font-size:1.25rem;margin:0 0 1rem}
+.checkout-summary{position:sticky;top:1rem}
+.checkout-summary__items{list-style:none;margin:0 0 1rem;padding:0}
+.checkout-summary__items li{display:flex;justify-content:space-between;gap:1rem;padding:.55rem 0;border-bottom:1px solid var(--line)}
+.checkout-summary__items li span:last-child{white-space:nowrap;font-weight:600}
+.checkout-actions{display:flex;gap:.65rem;flex-wrap:wrap;margin-top:.4rem}
+.checkout-actions .btn{flex:1 1 140px}
+.checkout-steps{display:flex;gap:.5rem;margin:0 0 1rem;color:var(--muted);font-size:.88rem}
+.checkout-steps span{padding:.35rem .6rem;border-radius:99px;background:var(--green-s)}
+.checkout-steps .is-current{background:var(--green);color:#fff}
+.checkout-alert{padding:.85rem 1rem;border-radius:10px;background:#fff4d6;color:#594915;font-size:.9rem}
+.checkout-error{min-height:1.2rem;color:var(--err);font-size:.9rem}
+.checkout-empty{text-align:center;padding:1rem}
+@media(max-width:760px){.checkout-grid{grid-template-columns:1fr}.checkout-summary{position:static;grid-row:1}.checkout-page{padding:1rem 0 2rem}}
+</style>
+</head>
+<body>
+<header class="header sub-header">
+  <div class="container header__inner">
+    <a href="index.html" class="brand" aria-label="Köken Fındık ana sayfa">
+      <img class="brand__logo" src="logo.jpg" alt="" width="56" height="56">
+      <span class="brand__text"><span class="brand__name">Köken Fındık</span><span class="brand__slogan">Fındığın Kökünden Gelen Lezzet</span></span>
+    </a>
+    <a href="index.html#urunler" class="back-link" id="backToStore">← Alışverişe dön</a>
+  </div>
+</header>
+<main class="container checkout-page">
+  <div class="checkout-page__intro"><p class="eyebrow">GÜVENLİ SİPARİŞ</p><h1 id="coTitle">Siparişi Tamamla</h1><p class="text-secondary">Teslimat, e-posta ve ödeme bilgilerinizi bu sayfada tamamlayın.</p></div>
+  <div class="checkout-grid">
+    <section class="checkout-card">
+      <div class="checkout-steps"><span id="stepLabel1" class="is-current">1 · Teslimat</span><span id="stepLabel2">2 · Ödeme</span></div>
+      <form id="orderForm" class="form" novalidate>
+        <div id="stepInfo">
+          <div class="form">
+            <label>Ad Soyad *<input name="name" autocomplete="name" required minlength="3" maxlength="80"></label>
+            <label>Telefon Numarası * <small>(05XXXXXXXXX)</small><input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" required maxlength="11" placeholder="05313385955" pattern="^05\d{9}$" title="05 ile başlayan 11 haneli telefon numarası"></label>
+            <label>E-posta adresi * <small>Sipariş ve kargo durumu bilgilendirmeleri için</small><input name="email" type="email" autocomplete="email" maxlength="190" placeholder="ornek@eposta.com" required></label>
+            <p class="checkout-policy-note">Kişisel bilgilerinizin nasıl işlendiğini <a href="kvkk.html" target="_blank" rel="noopener noreferrer" aria-label="KVKK Aydınlatma Metni, yeni sekmede açılır">KVKK Aydınlatma Metni</a> sayfasından okuyabilirsiniz <span>(yeni sekmede açılır)</span>.</p>
+            <div class="two">
+              <label>İl *<select name="city" required autocomplete="address-level1"><option value="">İl seçin</option></select></label>
+              <label>İlçe *<select name="district" required disabled autocomplete="address-level2"><option value="">Önce il seçin</option></select></label>
+            </div>
+            <label>Açık Adres *<textarea name="address" rows="3" required minlength="10" maxlength="250" autocomplete="street-address" placeholder="Mahalle, sokak, bina ve daire no"></textarea></label>
+            <label>Sipariş Notu <small>(opsiyonel)</small><textarea name="note" rows="2" maxlength="300"></textarea></label>
+            <p class="checkout-error" id="formErr" role="alert"></p>
+            <button type="button" class="btn btn--primary btn--block btn--lg" id="toPayBtn">Ödeme Seçimine Geç</button>
+          </div>
+        </div>
+        <div id="stepPay" hidden>
+          <div class="form">
+            <fieldset class="paychoice">
+              <legend>Ödeme Yöntemi *</legend>
+              <label class="radio" id="ibanChoice"><input type="radio" name="pay" value="iban"><span>Havale / EFT ile Ödeme (IBAN)</span></label>
+              <label class="radio"><input type="radio" name="pay" value="kapida"><span>Kapıda Ödeme</span></label>
+            </fieldset>
+            <div class="iban" id="ibanBox" hidden>
+              <p class="form__hint"><strong>Örnek IBAN:</strong> Bu test bilgileri gerçek bir hesaba ait değildir. Canlı ödeme almadan önce gerçek banka bilgileriyle değiştirin.</p>
+              <dl><div><dt>Banka</dt><dd id="ibanBank"></dd></div><div><dt>Alıcı Adı</dt><dd id="ibanHolder"></dd></div><div><dt>IBAN</dt><dd class="iban__no" id="ibanNo"></dd></div></dl>
+              <button type="button" class="btn btn--ghost" id="ibanCopy">IBAN'ı Kopyala</button>
+            </div>
+            <p class="checkout-error" id="payErr" role="alert"></p>
+            <div class="checkout-actions">
+              <button type="button" class="btn btn--ghost" id="backBtn">← Geri Dön</button>
+              <button type="submit" class="btn btn--primary" id="saveOrderBtn">Siparişi Kaydet</button>
+            </div>
+          </div>
+        </div>
+      </form>
+      <div class="checkout-alert mt-3">E-posta adresiniz sipariş ve kargo durumu hakkında bilgilendirme için kullanılacaktır.</div>
+    </section>
+    <aside class="checkout-card checkout-summary" aria-labelledby="summaryTitle">
+      <h2 id="summaryTitle">Sipariş Özeti</h2>
+      <ul id="coList" class="checkout-summary__items"></ul>
+      <div class="row"><span>Ara toplam</span><span id="coSubtotal">—</span></div>
+      <div class="row"><span>Kargo</span><span id="coShip">—</span></div>
+      <div class="row row--total"><span>Genel toplam</span><strong id="coTotal">—</strong></div>
+      <p class="checkout-error" id="cartErr" role="alert"></p>
+    </aside>
+  </div>
+</main>
+<footer class="footer">
+ <section class="assure" aria-label="Güvencelerimiz">
+  <div class="container assure__inner">
+    <div class="assure__item">
+      <span class="assure__ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span>
+      <div><strong>Orijinal Üretici</strong><small>Doğrudan üreticiden, aracısız</small></div>
+    </div>
+    <div class="assure__item">
+      <span class="assure__ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+      <div><strong>Hızlı Kargo</strong><small>Siparişiniz hızla kargoya verilir</small></div>
+    </div>
+    <div class="assure__item">
+      <span class="assure__ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+      <div><strong>Güvenli Paketleme</strong><small>Hava almayan, hijyenik ambalaj</small></div>
+    </div>
+  </div>
+</section>
+<div class="container footer__inner">
+    <div>
+      <h2 class="footer__title">Kurumsal</h2>
+      <ul>
+        <li><a href="admin/login.php">Yönetim Paneli</a></li>
+        <li><a href="hakkimizda.html">Hakkımızda</a></li>
+        <li><a href="uretim-tesisimiz.html">Üretim Tesisimiz</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Müşteri Hizmetleri</h4>
+      <ul>
+        <li><a href="siparis-takibi.html">Sipariş Takibi</a></li>
+        <li><a href="teslimat-ve-kargo.html">Teslimat ve Kargo</a></li>
+        <li><a href="iptal-ve-iade.html">İptal ve İade</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Yasal Bilgiler</h4>
+      <ul>
+        <li><a href="kvkk.html">KVKK Aydınlatma Metni</a></li>
+        <li><a href="mesafeli-satis-sozlesmesi.html">Mesafeli Satış Sözleşmesi</a></li>
+        <li><a href="cerez-politikasi.html">Gizlilik ve Çerez Politikası</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>İletişim</h4>
+      <address>
+        <p>Adres: Kökenli, Tokat Ordu Yolu No:34, 52000 Altınordu/Ordu</p>
+        <p>Telefon: <a href="tel:+905313385955">0531 338 59 55</a></p>
+        <a href="https://api.whatsapp.com/send?phone=905313385955" target="_blank" rel="noopener noreferrer">0531 338 59 55</a>
+      </address>
+    </div>
+  </div>
+  <div class="footer__copy">© 2026 Köken Fındık · Kırma, Kavurma, Ezme, Paketleme. Tüm hakları saklıdır.</div>
+</footer>
+<script src="checkout.js?v=20261025-mobile-modal-checkout" defer></script>
+</body>
+</html>

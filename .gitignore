@@ -1,2 +1,5 @@
 /database/backups/*.sql
 /database/backups/*.zip
+
+/.env
+/config/mail.local.php

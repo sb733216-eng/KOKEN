@@ -78,11 +78,15 @@ CREATE TABLE IF NOT EXISTS orders (
     order_date DATE NULL,
     customer_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
+    customer_email VARCHAR(190) NOT NULL DEFAULT '',
+    email_notifications TINYINT(1) NOT NULL DEFAULT 0,
+    status_email_sent_at TIMESTAMP NULL DEFAULT NULL,
     city VARCHAR(80) NOT NULL,
     district VARCHAR(80) NOT NULL,
     address VARCHAR(500) NOT NULL,
     note VARCHAR(500) NOT NULL DEFAULT '',
     payment_method VARCHAR(20) NOT NULL,
+    payment_status VARCHAR(32) NOT NULL DEFAULT 'unspecified',
     subtotal DECIMAL(10,2) NOT NULL,
     shipping_fee DECIMAL(10,2) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
@@ -92,6 +96,7 @@ CREATE TABLE IF NOT EXISTS orders (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_orders_status (status),
+    INDEX idx_orders_payment_status (payment_status),
     INDEX idx_orders_tracking (tracking_code, phone, order_date),
     INDEX idx_orders_created (created_at),
     UNIQUE KEY uq_orders_request_key (request_key)
@@ -146,4 +151,36 @@ CREATE TABLE IF NOT EXISTS restock_notifications (
     notified_at TIMESTAMP NULL DEFAULT NULL,
     CONSTRAINT fk_restock_notification_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
     UNIQUE KEY uq_restock_product_email (product_id, email), INDEX idx_restock_status_date (status, requested_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS order_status_history (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT UNSIGNED NOT NULL,
+    field_name VARCHAR(32) NOT NULL,
+    previous_value VARCHAR(190) NULL,
+    new_value VARCHAR(190) NULL,
+    changed_by INT UNSIGNED NULL,
+    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_order_status_history_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    INDEX idx_order_status_history_order_time (order_id, changed_at),
+    INDEX idx_order_status_history_admin (changed_by)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS order_email_notifications (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT UNSIGNED NOT NULL,
+    notification_type VARCHAR(32) NOT NULL,
+    idempotency_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    recipient VARCHAR(190) NOT NULL,
+    subject VARCHAR(255) NOT NULL DEFAULT '',
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    attempts SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    last_error VARCHAR(32) NULL,
+    last_attempt_at TIMESTAMP NULL DEFAULT NULL,
+    sent_at TIMESTAMP NULL DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_order_email_notification_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_order_email_idempotency (idempotency_key),
+    INDEX idx_order_email_order_type (order_id, notification_type, id),
+    INDEX idx_order_email_status_created (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

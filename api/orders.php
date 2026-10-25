@@ -10,6 +10,8 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/rate_limit.php';
+require_once __DIR__ . '/../config/mailer.php';
+require_once __DIR__ . '/../config/order_helpers.php';
 
 function order_json(array $payload, int $status = 200): never
 {
@@ -20,14 +22,15 @@ function order_json(array $payload, int $status = 200): never
 function order_text_length(string $value): int { return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value); }
 function order_replay(PDO $pdo, string $requestKey): ?array
 {
-    $find = $pdo->prepare('SELECT id,order_number,order_date,subtotal,shipping_fee,total FROM orders WHERE request_key=:request_key LIMIT 1');
+    $find = $pdo->prepare('SELECT id,order_number,order_date,subtotal,shipping_fee,total,payment_method,payment_status FROM orders WHERE request_key=:request_key LIMIT 1');
     $find->execute(['request_key' => $requestKey]);
     $order = $find->fetch();
     if (!$order) return null;
     $itemsQuery = $pdo->prepare('SELECT product_title,quantity,line_total FROM order_items WHERE order_id=:id ORDER BY id');
     $itemsQuery->execute(['id' => $order['id']]);
     $items = array_map(static fn(array $item): array => ['title' => $item['product_title'], 'quantity' => (int)$item['quantity'], 'lineTotal' => (float)$item['line_total']], $itemsQuery->fetchAll());
-    return ['ok' => true, 'orderNumber' => $order['order_number'], 'orderDate' => $order['order_date'], 'items' => $items, 'subtotal' => (float)$order['subtotal'], 'shippingFee' => (float)$order['shipping_fee'], 'total' => (float)$order['total']];
+    $delivery = order_email_delivery($pdo, (int)$order['id']);
+    return ['ok' => true, 'orderNumber' => $order['order_number'], 'orderDate' => $order['order_date'], 'items' => $items, 'subtotal' => (float)$order['subtotal'], 'shippingFee' => (float)$order['shipping_fee'], 'total' => (float)$order['total'], 'paymentMethod' => (string)$order['payment_method'], 'paymentStatus' => (string)$order['payment_status'], 'emailStatus' => (string)($delivery['status'] ?? 'pending'), 'emailIssue' => (string)($delivery['last_error'] ?? '')];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -65,6 +68,10 @@ $district = trim((string)($input['district'] ?? ''));
 $address = trim((string)($input['address'] ?? ''));
 $note = trim((string)($input['note'] ?? ''));
 $payment = (string)($input['payment'] ?? '');
+$email = trim((string)($input['email'] ?? ''));
+if ($email === '' || strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    order_json(['error' => 'Geçerli bir e-posta adresi girin.'], 422);
+}
 if (order_text_length($name) < 3 || order_text_length($name) > 100 || !preg_match('/^05\d{9}$/', $phone) || $city === '' || order_text_length($city) > 80 || $district === '' || order_text_length($district) > 80 || order_text_length($address) < 10 || order_text_length($address) > 500 || order_text_length($note) > 500 || !in_array($payment, ['iban', 'kapida'], true)) {
     order_json(['error' => 'Teslimat veya ödeme bilgileri geçersiz.'], 422);
 }
@@ -99,7 +106,7 @@ try {
         $subtotalCents += $unitCents * $qty;
     }
     $settings = $pdo->query("SELECT setting_key,setting_value FROM store_settings WHERE setting_key IN ('free_shipping_limit','shipping_fee')")->fetchAll(PDO::FETCH_KEY_PAIR);
-    $limitCents = (int)round((float)($settings['free_shipping_limit'] ?? 750) * 100);
+    $limitCents = (int)round((float)($settings['free_shipping_limit'] ?? 2000) * 100);
     $feeCents = $subtotalCents > 0 && $subtotalCents < $limitCents ? (int)round((float)($settings['shipping_fee'] ?? 60) * 100) : 0;
     $totalCents = $subtotalCents + $feeCents;
 
@@ -110,8 +117,9 @@ try {
     $orderNumber = (string)max(100, ((int)$sequence->fetchColumn()) + 1);
     $nextCode = $pdo->prepare('UPDATE public_order_code_sequence SET last_value=:value WHERE id=1');
     $nextCode->execute(['value' => $orderNumber]);
-    $insertOrder = $pdo->prepare('INSERT INTO orders (order_number,tracking_code,request_key,order_date,customer_name,phone,city,district,address,note,payment_method,subtotal,shipping_fee,total,status) VALUES (:number,:tracking_code,:request_key,:order_date,:name,:phone,:city,:district,:address,:note,:payment,:subtotal,:shipping,:total,:status)');
-    $insertOrder->execute(['number' => $orderNumber, 'tracking_code' => $trackingCode, 'request_key' => $requestKey, 'order_date' => $orderDate, 'name' => $name, 'phone' => $phone, 'city' => $city, 'district' => $district, 'address' => $address, 'note' => $note, 'payment' => $payment, 'subtotal' => number_format($subtotalCents / 100, 2, '.', ''), 'shipping' => number_format($feeCents / 100, 2, '.', ''), 'total' => number_format($totalCents / 100, 2, '.', ''), 'status' => 'pending_confirmation']);
+    $paymentStatus = $payment === 'iban' ? 'awaiting_payment' : 'collect_on_delivery';
+    $insertOrder = $pdo->prepare('INSERT INTO orders (order_number,tracking_code,request_key,order_date,customer_name,phone,customer_email,email_notifications,city,district,address,note,payment_method,payment_status,subtotal,shipping_fee,total,status) VALUES (:number,:tracking_code,:request_key,:order_date,:name,:phone,:email,:email_notifications,:city,:district,:address,:note,:payment,:payment_status,:subtotal,:shipping,:total,:status)');
+    $insertOrder->execute(['number' => $orderNumber, 'tracking_code' => $trackingCode, 'request_key' => $requestKey, 'order_date' => $orderDate, 'name' => $name, 'phone' => $phone, 'email' => $email, 'email_notifications' => 1, 'city' => $city, 'district' => $district, 'address' => $address, 'note' => $note, 'payment' => $payment, 'payment_status' => $paymentStatus, 'subtotal' => number_format($subtotalCents / 100, 2, '.', ''), 'shipping' => number_format($feeCents / 100, 2, '.', ''), 'total' => number_format($totalCents / 100, 2, '.', ''), 'status' => 'pending_confirmation']);
     $orderId = (int)$pdo->lastInsertId();
     $insertItem = $pdo->prepare('INSERT INTO order_items (order_id,product_id,product_title,unit_price,quantity,line_total) VALUES (:order_id,:product_id,:title,:price,:quantity,:line_total)');
     $updateStock = $pdo->prepare('UPDATE products SET stock_qty = stock_qty - :quantity WHERE id = :id AND stock_qty IS NOT NULL AND stock_qty >= :quantity_check');
@@ -127,8 +135,14 @@ try {
             $movement->execute(['id'=>$id,'title'=>$product['title'],'delta'=>-$qty,'before'=>(int)$product['stock_qty'],'after'=>(int)$product['stock_qty']-$qty,'reference'=>$orderId]);
         }
     }
+    $history = $pdo->prepare('INSERT INTO order_status_history (order_id,field_name,previous_value,new_value,changed_by) VALUES (:order_id,:field,NULL,:value,NULL)');
+    $history->execute(['order_id'=>$orderId,'field'=>'status','value'=>'pending_confirmation']);
+    $history->execute(['order_id'=>$orderId,'field'=>'payment_status','value'=>$paymentStatus]);
+    $mailSubject = 'Sipariş kaydınız alındı — WhatsApp onayı bekleniyor (#' . $orderNumber . ')';
+    $notificationId = queue_order_email_notification($pdo,$orderId,'order_received',hash('sha256','order_received:' . $requestKey),$email,$mailSubject);
     $pdo->commit();
-    order_json(['ok' => true, 'orderNumber' => $orderNumber, 'orderDate' => $orderDate, 'items' => $responseItems, 'subtotal' => $subtotalCents / 100, 'shippingFee' => $feeCents / 100, 'total' => $totalCents / 100]);
+    $mailResult = dispatch_order_email_notification($pdo,$notificationId);
+    order_json(['ok' => true, 'orderNumber' => $orderNumber, 'orderDate' => $orderDate, 'items' => $responseItems, 'subtotal' => $subtotalCents / 100, 'shippingFee' => $feeCents / 100, 'total' => $totalCents / 100, 'paymentMethod' => $payment, 'paymentStatus' => $paymentStatus, 'emailStatus' => $mailResult['status'], 'emailIssue' => $mailResult['error'] ?? '']);
 } catch (DomainException $exception) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     order_json(['error' => $exception->getMessage()], 409);

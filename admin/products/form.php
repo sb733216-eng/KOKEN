@@ -1,6 +1,6 @@
 <?php
 $product = $product ?? [
-    'title' => '', 'slug' => '', 'badges' => '', 'weight' => '', 'chip' => '', 'category_id' => '', 'price' => '',
+    'title' => '', 'badges' => '', 'weight' => '', 'chip' => '', 'category_id' => '', 'price' => '',
     'old_price' => '', 'description' => '', 'ingredients' => '', 'seo_title'=>'', 'seo_description'=>'', 'image' => null,
     'image2' => '', 'image3' => '', 'stock_qty' => null, 'is_new_harvest' => 0, 'is_active' => 1,
 ];
@@ -13,7 +13,6 @@ $product = $product ?? [
     <div class="row g-4">
       <div class="col-lg-8">
         <div class="mb-3"><label class="form-label" for="title">Ürün adı <span class="required">*</span></label><input class="form-control" id="title" name="title" maxlength="180" value="<?= e((string)$product['title']) ?>" required></div>
-        <div class="mb-3"><label class="form-label" for="slug">Ürün sayfası adresi</label><input class="form-control" id="slug" name="slug" maxlength="220" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value="<?= e((string)($product['slug'] ?? '')) ?>" placeholder="Boş bırakılırsa ürün adından oluşturulur"><small class="form-hint">Adres: /urun/<?= e((string)($product['slug'] ?? 'urun-adi')) ?> · Adres değişirse önceki ürün adresi yenisine yönlendirilir.</small></div>
         <div class="row g-3">
           <div class="col-md-6"><label class="form-label" for="weight">Gramaj</label><input class="form-control" id="weight" name="weight" maxlength="80" value="<?= e((string)($product['weight'] ?? '')) ?>" placeholder="500g"></div>
           <div class="col-md-6"><label class="form-label" for="chip">Kart etiketi</label><input class="form-control" id="chip" name="chip" maxlength="120" value="<?= e((string)($product['chip'] ?? '')) ?>" placeholder="Avantaj paketi"></div>

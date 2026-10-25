@@ -2,7 +2,7 @@
 require_once __DIR__ . '/auth.php';
 require_admin();
 
-$settings = ['free_shipping_limit' => '750', 'shipping_fee' => '60', 'low_stock_threshold' => '5'];
+$settings = ['free_shipping_limit' => '2000', 'shipping_fee' => '60', 'low_stock_threshold' => '5'];
 $rows = $pdo->query('SELECT setting_key, setting_value FROM store_settings')->fetchAll();
 foreach ($rows as $row) $settings[$row['setting_key']] = $row['setting_value'];
 $error = '';

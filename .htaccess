@@ -3,5 +3,7 @@
 ErrorDocument 404 /koken-admin/404.html
 
 RewriteEngine On
+# XAMPP project base; use RewriteBase / when deployed at domain root.
+RewriteBase /koken-admin/
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
-RewriteRule ^urun/([a-z0-9]+(?:-[a-z0-9]+)*)/?$ product.php?slug=$1 [L,QSA]
+RewriteRule ^urun/([a-z0-9]+(?:-[a-z0-9]+)*)/?$ index.html#urunler [R=302,L,NE,QSD]

@@ -102,6 +102,8 @@
   const form = document.getElementById('trackOrderForm');
   const error = document.getElementById('trackError');
   const result = document.getElementById('trackResult');
+  const initialOrderCode = new URLSearchParams(location.search).get('order') || '';
+  if (/^\d{3,10}$/.test(initialOrderCode)) form.elements.code.value = initialOrderCode;
   form.elements.phone.addEventListener('input', () => { form.elements.phone.value = form.elements.phone.value.replace(/\D/g, '').slice(0, 11); });
   form.elements.code.addEventListener('input', () => { const input = form.elements.code; const value = input.value; input.value = value.length > 10 ? value.replace(/[^a-f0-9]/gi, '').slice(0, 32) : value.replace(/\D/g, '').slice(0, 10); });
   form.addEventListener('submit', async (event) => {
