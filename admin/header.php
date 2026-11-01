@@ -12,12 +12,13 @@ unset($_SESSION['flash']);
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($pageTitle) ?> · Koken</title>
+  <?php if ($current === 'orders'): ?><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><?php endif; ?>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="<?= e(app_url('assets/admin.css')) ?>" rel="stylesheet">
 </head>
-<body>
+<body class="<?= $current === 'orders' ? 'admin-orders-page' : '' ?>">
 <div class="admin-shell">
-  <aside class="sidebar">
+  <aside class="sidebar" id="admin-sidebar">
     <a class="side-brand" href="<?= e(app_url('admin/index.php')) ?>"><span class="brand-mark">K</span><span>KOKEN<span class="brand-sub">YÖNETİM PANELİ</span></span></a>
     <div class="nav-label">MENÜ</div>
     <nav class="side-nav">
@@ -34,7 +35,8 @@ unset($_SESSION['flash']);
       <form method="post" action="<?= e(app_url('admin/logout.php')) ?>"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><button class="logout-link" type="submit">↪ Çıkış yap</button></form>
     </div>
   </aside>
+  <button type="button" class="nav-overlay" aria-label="Menüyü kapat" onclick="document.body.classList.remove('nav-open')"></button>
   <main class="main-panel">
-    <header class="topbar"><button class="menu-toggle" aria-label="Menüyü aç" onclick="document.body.classList.toggle('nav-open')">☰</button><div><span class="breadcrumb-label">Yönetim</span><span class="breadcrumb-sep">/</span><strong><?= e($pageTitle) ?></strong></div><span class="top-date"><?= date('d.m.Y') ?></span></header>
+    <header class="topbar"><button class="menu-toggle" type="button" aria-label="Menüyü aç" aria-controls="admin-sidebar" aria-expanded="false" onclick="const open=document.body.classList.toggle('nav-open');this.setAttribute('aria-expanded',String(open));this.setAttribute('aria-label',open?'Menüyü kapat':'Menüyü aç')">☰</button><div><span class="breadcrumb-label">Yönetim</span><span class="breadcrumb-sep">/</span><strong><?= e($pageTitle) ?></strong></div><span class="top-date"><?= date('d.m.Y') ?></span></header>
     <section class="page-content">
       <?php if ($notice): ?><div class="alert alert-<?= e($notice['type']) ?> alert-dismissible fade show" role="alert"><?= e($notice['message']) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>

@@ -44,13 +44,19 @@ function order_mail_configuration(): array
         if ($environmentValue !== false) return $environmentValue;
         return $local[$key] ?? $default;
     };
+    $mailAddress = trim((string)$readSetting('MAIL_ADDRESS', 'address', 'sb733216@gmail.com'));
+    $smtpUsername = trim((string)$readSetting('SMTP_USERNAME', 'username', ''));
+    $fromAddress = trim((string)$readSetting('MAIL_FROM_ADDRESS', 'from_address', ''));
+    if ($smtpUsername === '') $smtpUsername = $mailAddress;
+    if ($fromAddress === '') $fromAddress = $mailAddress;
     $configuration = [
         'host' => trim((string)$readSetting('SMTP_HOST', 'host', 'smtp.gmail.com')),
         'port' => (int)$readSetting('SMTP_PORT', 'port', 587),
         'encryption' => strtolower(trim((string)$readSetting('SMTP_ENCRYPTION', 'encryption', 'starttls'))),
-        'username' => trim((string)$readSetting('SMTP_USERNAME', 'username')),
+        'address' => $mailAddress,
+        'username' => $smtpUsername,
         'password' => (string)$readSetting('SMTP_PASSWORD', 'password'),
-        'from_address' => trim((string)$readSetting('MAIL_FROM_ADDRESS', 'from_address')),
+        'from_address' => $fromAddress,
         'from_name' => trim((string)$readSetting('MAIL_FROM_NAME', 'from_name', 'Köken Fındık')),
         'config_error' => $configError,
     ];
@@ -85,72 +91,175 @@ function order_mail_money(float|string $value): string
 
 function order_mail_whatsapp_url(array $order): string
 {
-    $phone = '905313385955';
-    $number = preg_replace('/[^0-9]/', '', (string)($order['order_number'] ?? ''));
-    $method = order_payment_method_label((string)($order['payment_method'] ?? ''));
-    $total = order_mail_money((string)($order['total'] ?? 0));
-    $message = 'Merhaba, #' . $number . ' numaralı siparişimi kaydettim. Toplam: ' . $total . '. Ödeme yöntemi: ' . $method . '. Siparişimin onaylanmasını rica ederim.';
-    return 'https://api.whatsapp.com/send?phone=' . rawurlencode($phone) . '&text=' . rawurlencode($message);
+    return 'https://api.whatsapp.com/send?phone=905313385955';
+}
+
+function order_mail_status_presentation(string $status, bool $received): array
+{
+    if ($received) return [
+        'subject' => 'Siparişiniz kaydedildi',
+        'label' => 'Kayıt alındı',
+        'description' => 'Siparişinizi kaydettik. Siparişiniz satıcı onayından sonra işleme alınacaktır.',
+    ];
+
+    return match ($status) {
+        'confirmed' => ['subject'=>'Siparişiniz onaylandı','label'=>'Onaylandı','description'=>'Siparişiniz onaylandı ve işleme alındı.'],
+        'preparing' => ['subject'=>'Siparişiniz hazırlanıyor','label'=>'Hazırlanıyor','description'=>'Siparişiniz özenle hazırlanıyor.'],
+        'shipped' => ['subject'=>'Siparişiniz kargoya verildi','label'=>'Kargoya verildi','description'=>'Siparişiniz kargoya verildi. Kargo bilgilerini aşağıda bulabilirsiniz.'],
+        'completed' => ['subject'=>'Siparişiniz tamamlandı','label'=>'Tamamlandı','description'=>'Siparişiniz tamamlandı. Bizi tercih ettiğiniz için teşekkür ederiz.'],
+        'cancelled' => ['subject'=>'Siparişiniz iptal edildi','label'=>'İptal edildi','description'=>'Siparişiniz iptal edildi.'],
+        'pending_confirmation' => ['subject'=>'Siparişiniz kaydedildi','label'=>'Beklemede','description'=>'Siparişiniz satıcı onayından sonra işleme alınacaktır.'],
+        default => ['subject'=>'Sipariş bilgileriniz güncellendi','label'=>'Güncellendi','description'=>'Sipariş bilgileriniz güncellendi.'],
+    };
+}
+
+function order_mail_notification_subject(string $status, string $orderNumber, string $notificationType): string
+{
+    $number = trim(preg_replace('/[\r\n]+/', '', $orderNumber));
+    $presentation = order_mail_status_presentation($status, $notificationType === 'order_received');
+    return $presentation['subject'] . ($number !== '' ? ' (#' . $number . ')' : '');
+}
+
+function order_mail_valid_tracking_url(mixed $url): ?string
+{
+    if (!is_string($url) || filter_var($url, FILTER_VALIDATE_URL) === false) return null;
+    $parts = parse_url($url);
+    if (strtolower((string)($parts['scheme'] ?? '')) !== 'https' || empty($parts['host']) || isset($parts['user']) || isset($parts['pass'])) return null;
+    $host = strtolower(rtrim((string)$parts['host'], '.'));
+    if (in_array($host, ['localhost','localhost.localdomain'], true) || preg_match('/\.(?:localhost|local|internal)$/i', $host)) return null;
+    if (filter_var($host, FILTER_VALIDATE_IP) !== false && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) return null;
+    if (preg_match('~(?:^|/)admin(?:/|$)~i', (string)($parts['path'] ?? ''))) return null;
+    return $url;
+}
+
+function order_mail_date(array $order): string
+{
+    $raw = trim((string)($order['created_at'] ?? $order['order_date'] ?? ''));
+    if ($raw === '') return 'Belirtilmedi';
+    try { return (new DateTimeImmutable($raw))->format('d.m.Y H:i'); }
+    catch (Throwable) { return 'Belirtilmedi'; }
 }
 
 function order_mail_content(array $order, array $items, string $notificationType): array
 {
-    $number = preg_replace('/[^0-9]/', '', (string)($order['order_number'] ?? ''));
-    $name = trim((string)($order['customer_name'] ?? 'Müşteri'));
-    $status = order_status_labels()[(string)($order['status'] ?? '')] ?? 'Güncellendi';
+    $number = trim((string)($order['order_number'] ?? ''));
+    $name = trim((string)($order['customer_name'] ?? 'Müşteri')) ?: 'Müşteri';
+    $received = $notificationType === 'order_received';
+    $statusCode = (string)($order['status'] ?? '');
+    $presentation = order_mail_status_presentation($statusCode, $received);
+    $subject = order_mail_notification_subject($statusCode, $number, $notificationType);
     $method = order_payment_method_label((string)($order['payment_method'] ?? ''));
     $paymentStatus = order_payment_status_label((string)($order['payment_status'] ?? 'unspecified'));
-    $received = $notificationType === 'order_received';
-    $subject = $received
-        ? 'Sipariş kaydınız alındı — WhatsApp onayı bekleniyor (#' . $number . ')'
-        : 'Sipariş #' . $number . ' durum ve kargo bilgisi güncellendi';
+    $shippingFee = (float)($order['shipping_fee'] ?? 0);
+    $discount = (float)($order['discount_amount'] ?? 0);
+    $shippingLabel = $shippingFee > 0 ? order_mail_money((string)$shippingFee) : 'Ücretsiz';
+    $addressParts = array_values(array_filter([
+        trim((string)($order['address'] ?? '')),
+        trim((string)($order['district'] ?? '')),
+        trim((string)($order['city'] ?? '')),
+    ], static fn(string $part): bool => $part !== ''));
+    $address = implode(', ', $addressParts);
+    $trackingUrl = $statusCode === 'shipped' ? order_mail_valid_tracking_url($order['tracking_url'] ?? null) : null;
+    $carrier = trim((string)($order['carrier'] ?? ''));
+    $trackingNumber = trim((string)($order['tracking_number'] ?? ''));
+    $storeUrl = 'https://kokenfindik.com/';
+    $whatsappUrl = order_mail_whatsapp_url($order);
 
     $plain = [
+        'Köken Fındık — Fındığın Kökünden Gelen Lezzet',
+        '',
+        'Durum: ' . $presentation['label'],
+        $presentation['subject'],
         'Merhaba ' . $name . ',',
         '',
-        $received ? 'Sipariş kaydınız alındı. Sipariş #' . $number . ' veritabanına kaydedildi.' : 'Sipariş #' . $number . ' bilgileriniz güncellendi.',
-        'Durum: ' . $status,
+        $presentation['description'],
+        '',
+        'Sipariş no: #' . $number,
+        'Tarih: ' . order_mail_date($order),
         '',
         'Ürünler:',
     ];
-    foreach ($items as $item) $plain[] = '• ' . (string)$item['product_title'] . ' × ' . (int)$item['quantity'] . ' — ' . order_mail_money((string)$item['line_total']);
+    foreach ($items as $item) {
+        $title = trim((string)($item['product_title'] ?? 'Ürün'));
+        $variant = trim((string)($item['variant_label'] ?? ''));
+        $plain[] = $title . ($variant !== '' ? ' · ' . $variant : '') . ' × ' . (int)($item['quantity'] ?? 0) . ' — ' . order_mail_money((string)($item['line_total'] ?? 0));
+    }
     $plain[] = '';
-    $plain[] = 'Ara toplam: ' . order_mail_money((string)$order['subtotal']);
-    $plain[] = 'Kargo: ' . order_mail_money((string)$order['shipping_fee']);
-    $plain[] = 'Genel toplam: ' . order_mail_money((string)$order['total']);
+    $plain[] = 'Ara toplam: ' . order_mail_money((string)($order['subtotal'] ?? 0));
+    if ($discount > 0) $plain[] = 'İndirim: −' . order_mail_money((string)$discount);
+    $plain[] = 'Kargo: ' . $shippingLabel;
+    $plain[] = 'Genel toplam: ' . order_mail_money((string)($order['total'] ?? 0));
     $plain[] = 'Ödeme yöntemi: ' . $method;
     $plain[] = 'Ödeme durumu: ' . $paymentStatus;
-    if ((string)($order['carrier'] ?? '') !== '' || (string)($order['tracking_number'] ?? '') !== '') {
-        $plain[] = 'Kargo firması: ' . ((string)$order['carrier'] !== '' ? (string)$order['carrier'] : 'Belirtilmedi');
-        $plain[] = 'Kargo takip numarası: ' . ((string)$order['tracking_number'] !== '' ? (string)$order['tracking_number'] : 'Henüz eklenmedi');
+    if ($address !== '') $plain[] = 'Teslimat adresi: ' . $address;
+    if ($statusCode === 'shipped' && ($carrier !== '' || $trackingNumber !== '')) {
+        $plain[] = 'Kargo firması: ' . ($carrier !== '' ? $carrier : 'Belirtilmedi');
+        $plain[] = 'Kargo takip numarası: ' . ($trackingNumber !== '' ? $trackingNumber : 'Henüz eklenmedi');
+        if ($trackingUrl !== null) $plain[] = 'Kargomu takip et: ' . $trackingUrl;
     }
     $plain[] = '';
-    $plain[] = 'Önemli: Sipariş kaydı, satıcı onayından ayrıdır. Siparişinizin işleme alınması için WhatsApp üzerinden #' . $number . ' sipariş numarasıyla bildirim yapın. Satıcı onayından sonra sipariş işleme alınır.';
-    $plain[] = 'Bu e-posta bilgilendirme içindir; WhatsApp onayının yerine geçmez. WhatsApp bağlantısına tıklamak mesajın gönderildiği veya siparişin onaylandığı anlamına gelmez.';
-    $plain[] = '';
-    $plain[] = 'Köken Fındık';
+    $plain[] = 'Mağaza: ' . $storeUrl;
+    $plain[] = 'WhatsApp destek: ' . $whatsappUrl;
 
-    $rowHtml = '';
+    $productRows = '';
     foreach ($items as $item) {
-        $rowHtml .= '<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb">' . order_mail_html_escape((string)$item['product_title']) . ' × ' . (int)$item['quantity'] . '</td><td style="padding:8px;text-align:right;border-bottom:1px solid #e5e7eb">' . order_mail_money((string)$item['line_total']) . '</td></tr>';
+        $title = trim((string)($item['product_title'] ?? 'Ürün'));
+        $variant = trim((string)($item['variant_label'] ?? ''));
+        $productLabel = order_mail_html_escape($title) . ($variant !== '' ? '<br><span style="color:#6D6B64;font-size:12px">' . order_mail_html_escape($variant) . '</span>' : '');
+        $productRows .= '<tr>'
+            . '<td style="padding:12px 10px;border-bottom:1px solid #E7E3DC;color:#2A2A26;font-family:Arial,sans-serif;font-size:14px;line-height:1.5;word-break:break-word">' . $productLabel . '</td>'
+            . '<td align="center" style="padding:12px 8px;border-bottom:1px solid #E7E3DC;color:#2A2A26;font-family:Arial,sans-serif;font-size:14px;white-space:nowrap">' . (int)($item['quantity'] ?? 0) . '</td>'
+            . '<td align="right" style="padding:12px 10px;border-bottom:1px solid #E7E3DC;color:#2A2A26;font-family:Arial,sans-serif;font-size:14px;white-space:nowrap">' . order_mail_money((string)($item['line_total'] ?? 0)) . '</td>'
+            . '</tr>';
     }
-    $whatsappUrl = order_mail_html_escape(order_mail_whatsapp_url($order));
-    $html = '<!doctype html><html lang="tr"><body style="margin:0;padding:24px;background:#f5f7f4;font-family:Arial,sans-serif;color:#202820"><main style="max-width:640px;margin:auto;padding:24px;background:#fff;border:1px solid #dce5dc;border-radius:12px">'
-        . '<h1 style="font-size:22px;color:#1c5a27">' . order_mail_html_escape($subject) . '</h1>'
-        . '<p>Merhaba ' . order_mail_html_escape($name) . ',</p><p>' . ($received ? 'Sipariş kaydınız alındı; sipariş satıcı onayı bekliyor.' : 'Sipariş bilgileriniz güncellendi.') . '</p>'
-        . '<p><strong>Sipariş durumu:</strong> ' . order_mail_html_escape($status) . '</p>'
-        . '<table role="presentation" style="width:100%;border-collapse:collapse"><thead><tr><th align="left" style="padding:8px;border-bottom:2px solid #dce5dc">Ürün</th><th align="right" style="padding:8px;border-bottom:2px solid #dce5dc">Tutar</th></tr></thead><tbody>' . $rowHtml . '</tbody></table>'
-        . '<p>Ara toplam: ' . order_mail_money((string)$order['subtotal']) . '<br>Kargo: ' . order_mail_money((string)$order['shipping_fee']) . '<br><strong>Genel toplam: ' . order_mail_money((string)$order['total']) . '</strong></p>'
-        . '<p>Ödeme yöntemi: ' . order_mail_html_escape($method) . '<br>Ödeme durumu: ' . order_mail_html_escape($paymentStatus) . '</p>';
-    if ((string)($order['carrier'] ?? '') !== '' || (string)($order['tracking_number'] ?? '') !== '') {
-        $html .= '<p>Kargo firması: ' . order_mail_html_escape((string)($order['carrier'] ?: 'Belirtilmedi')) . '<br>Kargo takip numarası: ' . order_mail_html_escape((string)($order['tracking_number'] ?: 'Henüz eklenmedi')) . '</p>';
-    }
-    $html .= '<div style="margin:20px 0;padding:14px;background:#fff4d6;border-radius:8px"><strong>Sipariş onayı gereklidir.</strong> Siparişinizi WhatsApp üzerinden #' . order_mail_html_escape($number) . ' numarasıyla bildirin. Satıcı onayından sonra siparişiniz işleme alınır. E-posta bildirimi bu onayın yerine geçmez.</div>'
-        . '<p><a href="' . $whatsappUrl . '" style="display:inline-block;padding:12px 18px;background:#1c5a27;color:#fff;text-decoration:none;border-radius:8px">WhatsApp ile sipariş numarasını bildir</a></p>'
-        . '<p style="font-size:13px;color:#5b665b">Bağlantıyı açmak mesajın gönderildiği veya siparişin onaylandığı anlamına gelmez. Mesaj gönderilemezse siparişiniz kayıtlı kalır; WhatsApp üzerinden tekrar deneyebilirsiniz.</p>'
-        . '<p>Köken Fındık</p></main></body></html>';
+    if ($productRows === '') $productRows = '<tr><td colspan="3" style="padding:14px 10px;color:#6D6B64;font-family:Arial,sans-serif;font-size:14px">Ürün bilgisi bulunamadı.</td></tr>';
 
-    return ['subject' => $subject, 'text' => implode("\r\n", $plain), 'html' => $html];
+    $trackingHtml = '';
+    if ($statusCode === 'shipped' && ($carrier !== '' || $trackingNumber !== '')) {
+        $trackingHtml = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:18px;background:#F9F8F6;border:1px solid #E7E3DC;border-radius:8px"><tr><td style="padding:14px;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#2A2A26"><strong>Kargo bilgileri</strong><br>Firma: ' . order_mail_html_escape($carrier !== '' ? $carrier : 'Belirtilmedi') . '<br>Takip numarası: <span style="white-space:nowrap">' . order_mail_html_escape($trackingNumber !== '' ? $trackingNumber : 'Henüz eklenmedi') . '</span>';
+        if ($trackingUrl !== null) $trackingHtml .= '<br><br><a href="' . order_mail_html_escape($trackingUrl) . '" style="display:inline-block;padding:10px 16px;background:#1C5A27;color:#FFFFFF;text-decoration:none;border-radius:6px;font-weight:bold">Kargomu takip et</a>';
+        $trackingHtml .= '</td></tr></table>';
+    }
+    $addressHtml = $address !== ''
+        ? '<tr><td style="padding:6px 0;color:#6D6B64;font-family:Arial,sans-serif;font-size:13px;vertical-align:top">Teslimat adresi</td><td style="padding:6px 0;color:#2A2A26;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;text-align:right">' . order_mail_html_escape($address) . '</td></tr>'
+        : '';
+    $totalsRows = '<tr><td style="padding:5px 0;color:#6D6B64;font-family:Arial,sans-serif;font-size:14px">Ara toplam</td><td align="right" style="padding:5px 0;color:#2A2A26;font-family:Arial,sans-serif;font-size:14px;white-space:nowrap">' . order_mail_money((string)($order['subtotal'] ?? 0)) . '</td></tr>';
+    if ($discount > 0) $totalsRows .= '<tr><td style="padding:5px 0;color:#6D6B64;font-family:Arial,sans-serif;font-size:14px">İndirim</td><td align="right" style="padding:5px 0;color:#1C5A27;font-family:Arial,sans-serif;font-size:14px;white-space:nowrap">−' . order_mail_money((string)$discount) . '</td></tr>';
+    $totalsRows .= '<tr><td style="padding:5px 0;color:#6D6B64;font-family:Arial,sans-serif;font-size:14px">Kargo</td><td align="right" style="padding:5px 0;color:#2A2A26;font-family:Arial,sans-serif;font-size:14px;white-space:nowrap">' . $shippingLabel . '</td></tr>'
+        . '<tr><td style="padding:12px 0 0;border-top:1px solid #E7E3DC;color:#14421C;font-family:Arial,sans-serif;font-size:15px;font-weight:bold">Genel toplam</td><td align="right" style="padding:12px 0 0;border-top:1px solid #E7E3DC;color:#14421C;font-family:Arial,sans-serif;font-size:18px;font-weight:bold;white-space:nowrap">' . order_mail_money((string)($order['total'] ?? 0)) . '</td></tr>';
+
+    $html = '<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . order_mail_html_escape($subject) . '</title></head>'
+        . '<body style="margin:0;padding:20px 10px;background:#F9F8F6;color:#2A2A26;font-family:Arial,sans-serif">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F9F8F6" style="width:100%;background:#F9F8F6"><tr><td align="center" style="padding:0">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="width:100%;max-width:640px;background:#FFFFFF;border:1px solid #E7E3DC;border-radius:10px;border-collapse:separate;border-spacing:0;overflow:hidden">'
+        . '<tr><td bgcolor="#14421C" style="padding:24px 26px;background:#14421C;color:#FFFFFF;font-family:Arial,sans-serif">'
+        . '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font-family:Georgia,serif;font-size:25px;font-weight:bold;line-height:1.2;color:#FFFFFF">Köken Fındık</td></tr>'
+        . '<tr><td style="padding-top:6px;color:#D9B85C;font-family:Georgia,serif;font-size:13px;font-style:italic">Fındığın Kökünden Gelen Lezzet</td></tr></table>'
+        . '</td></tr><tr><td style="padding:24px 26px 10px;font-family:Arial,sans-serif">'
+        . '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:6px 11px;border:1px solid #C29B38;border-radius:20px;background:#FBF6E9;color:#14421C;font-family:Arial,sans-serif;font-size:12px;font-weight:bold">' . order_mail_html_escape($presentation['label']) . '</td></tr></table>'
+        . '<h1 style="margin:18px 0 10px;color:#14421C;font-family:Georgia,serif;font-size:25px;line-height:1.3">' . order_mail_html_escape($presentation['subject']) . '</h1>'
+        . '<p style="margin:0 0 10px;color:#2A2A26;font-family:Arial,sans-serif;font-size:15px;line-height:1.6">Merhaba ' . order_mail_html_escape($name) . ',</p>'
+        . '<p style="margin:0 0 18px;color:#6D6B64;font-family:Arial,sans-serif;font-size:14px;line-height:1.65">' . order_mail_html_escape($presentation['description']) . '</p>'
+        . '</td></tr><tr><td style="padding:0 26px 20px;font-family:Arial,sans-serif">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background:#F9F8F6;border:1px solid #E7E3DC;border-radius:8px"><tr>'
+        . '<td style="padding:12px 14px;color:#6D6B64;font-family:Arial,sans-serif;font-size:13px">Sipariş no<br><strong style="display:inline-block;padding-top:4px;color:#2A2A26;font-size:15px;white-space:nowrap">#' . order_mail_html_escape($number) . '</strong></td>'
+        . '<td align="right" style="padding:12px 14px;color:#6D6B64;font-family:Arial,sans-serif;font-size:13px">Tarih<br><strong style="display:inline-block;padding-top:4px;color:#2A2A26;font-size:14px;white-space:nowrap">' . order_mail_html_escape(order_mail_date($order)) . '</strong></td>'
+        . '</tr></table></td></tr><tr><td style="padding:0 26px 20px">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse">'
+        . '<tr><th align="left" style="padding:10px;border-bottom:2px solid #1C5A27;color:#14421C;font-family:Arial,sans-serif;font-size:12px">Ürün</th><th align="center" style="padding:10px 8px;border-bottom:2px solid #1C5A27;color:#14421C;font-family:Arial,sans-serif;font-size:12px;white-space:nowrap">Adet</th><th align="right" style="padding:10px;border-bottom:2px solid #1C5A27;color:#14421C;font-family:Arial,sans-serif;font-size:12px;white-space:nowrap">Tutar</th></tr>' . $productRows . '</table>'
+        . '</td></tr><tr><td align="right" style="padding:0 26px 20px">'
+        . '<table role="presentation" width="270" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:270px;margin-left:auto;border-collapse:collapse">' . $totalsRows . '</table>'
+        . '</td></tr><tr><td style="padding:0 26px 22px">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-top:1px solid #E7E3DC"><tr>'
+        . '<td style="padding:14px 14px 6px;color:#6D6B64;font-family:Arial,sans-serif;font-size:13px;vertical-align:top">Ödeme yöntemi</td><td align="right" style="padding:14px 14px 6px;color:#2A2A26;font-family:Arial,sans-serif;font-size:13px">' . order_mail_html_escape($method) . '</td></tr>'
+        . '<tr><td style="padding:6px 14px;color:#6D6B64;font-family:Arial,sans-serif;font-size:13px;vertical-align:top">Ödeme durumu</td><td align="right" style="padding:6px 14px;color:#2A2A26;font-family:Arial,sans-serif;font-size:13px">' . order_mail_html_escape($paymentStatus) . '</td></tr>'
+        . $addressHtml . '</table>' . $trackingHtml
+        . '</td></tr><tr><td style="padding:18px 26px;background:#F9F8F6;border-top:1px solid #E7E3DC;text-align:center;font-family:Arial,sans-serif;font-size:12px;line-height:1.8;color:#6D6B64">'
+        . '<a href="' . $storeUrl . '" style="color:#1C5A27;text-decoration:underline">Köken Fındık mağazasını ziyaret edin</a>'
+        . '&nbsp;&nbsp;·&nbsp;&nbsp;<a href="' . order_mail_html_escape($whatsappUrl) . '" style="color:#1C5A27;text-decoration:underline">WhatsApp destek</a>'
+        . '</td></tr></table></td></tr></table></body></html>';
+
+    return ['subject'=>$subject,'text'=>implode("\r\n",$plain),'html'=>$html];
 }
 
 function order_mail_send(string $recipient, array $content): void
@@ -227,7 +336,7 @@ function dispatch_order_email_notification(PDO $pdo, int $notificationId): array
         $load->execute(['id' => $notificationId]);
         $order = $load->fetch(PDO::FETCH_ASSOC);
         if (!$order) throw new OrderMailException('order_missing');
-        $itemsQuery = $pdo->prepare('SELECT product_title,quantity,line_total FROM order_items WHERE order_id=:id ORDER BY id');
+        $itemsQuery = $pdo->prepare('SELECT product_title,variant_label,quantity,line_total FROM order_items WHERE order_id=:id ORDER BY id');
         $itemsQuery->execute(['id' => $order['id']]);
         $content = order_mail_content($order, $itemsQuery->fetchAll(PDO::FETCH_ASSOC), (string)$order['notification_type']);
         order_mail_send((string)$order['recipient'], $content);

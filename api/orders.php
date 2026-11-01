@@ -90,7 +90,7 @@ foreach ($itemsInput as $item) {
 try {
     $pdo->beginTransaction();
     $placeholders = implode(',', array_fill(0, count($quantities), '?'));
-    $productQuery = $pdo->prepare("SELECT id,title,price,stock_qty,is_active FROM products WHERE id IN ($placeholders) FOR UPDATE");
+    $productQuery = $pdo->prepare("SELECT id,title,weight,price,stock_qty,is_active FROM products WHERE id IN ($placeholders) FOR UPDATE");
     $productQuery->execute(array_keys($quantities));
     $products = [];
     foreach ($productQuery->fetchAll() as $product) $products[(int)$product['id']] = $product;
@@ -121,13 +121,13 @@ try {
     $insertOrder = $pdo->prepare('INSERT INTO orders (order_number,tracking_code,request_key,order_date,customer_name,phone,customer_email,email_notifications,city,district,address,note,payment_method,payment_status,subtotal,shipping_fee,total,status) VALUES (:number,:tracking_code,:request_key,:order_date,:name,:phone,:email,:email_notifications,:city,:district,:address,:note,:payment,:payment_status,:subtotal,:shipping,:total,:status)');
     $insertOrder->execute(['number' => $orderNumber, 'tracking_code' => $trackingCode, 'request_key' => $requestKey, 'order_date' => $orderDate, 'name' => $name, 'phone' => $phone, 'email' => $email, 'email_notifications' => 1, 'city' => $city, 'district' => $district, 'address' => $address, 'note' => $note, 'payment' => $payment, 'payment_status' => $paymentStatus, 'subtotal' => number_format($subtotalCents / 100, 2, '.', ''), 'shipping' => number_format($feeCents / 100, 2, '.', ''), 'total' => number_format($totalCents / 100, 2, '.', ''), 'status' => 'pending_confirmation']);
     $orderId = (int)$pdo->lastInsertId();
-    $insertItem = $pdo->prepare('INSERT INTO order_items (order_id,product_id,product_title,unit_price,quantity,line_total) VALUES (:order_id,:product_id,:title,:price,:quantity,:line_total)');
+    $insertItem = $pdo->prepare('INSERT INTO order_items (order_id,product_id,product_title,variant_label,unit_price,quantity,line_total) VALUES (:order_id,:product_id,:title,:variant,:price,:quantity,:line_total)');
     $updateStock = $pdo->prepare('UPDATE products SET stock_qty = stock_qty - :quantity WHERE id = :id AND stock_qty IS NOT NULL AND stock_qty >= :quantity_check');
     $movement = $pdo->prepare("INSERT INTO stock_movements(product_id,product_title,change_qty,stock_before,stock_after,movement_type,reference_id,note) VALUES(:id,:title,:delta,:before,:after,'order',:reference,'Stok, sipariş verildiğinde düşüldü')");
     foreach ($quantities as $id => $qty) {
         $product = $products[$id];
         $unitCents = (int)round((float)$product['price'] * 100);
-        $insertItem->execute(['order_id' => $orderId, 'product_id' => $id, 'title' => $product['title'], 'price' => number_format($unitCents / 100, 2, '.', ''), 'quantity' => $qty, 'line_total' => number_format($unitCents * $qty / 100, 2, '.', '')]);
+        $insertItem->execute(['order_id' => $orderId, 'product_id' => $id, 'title' => $product['title'], 'variant' => trim((string)($product['weight'] ?? '')), 'price' => number_format($unitCents / 100, 2, '.', ''), 'quantity' => $qty, 'line_total' => number_format($unitCents * $qty / 100, 2, '.', '')]);
         $responseItems[] = ['title' => $product['title'], 'quantity' => $qty, 'lineTotal' => $unitCents * $qty / 100];
         if ($product['stock_qty'] !== null) {
             $updateStock->execute(['quantity' => $qty, 'id' => $id, 'quantity_check' => $qty]);
@@ -138,7 +138,7 @@ try {
     $history = $pdo->prepare('INSERT INTO order_status_history (order_id,field_name,previous_value,new_value,changed_by) VALUES (:order_id,:field,NULL,:value,NULL)');
     $history->execute(['order_id'=>$orderId,'field'=>'status','value'=>'pending_confirmation']);
     $history->execute(['order_id'=>$orderId,'field'=>'payment_status','value'=>$paymentStatus]);
-    $mailSubject = 'Sipariş kaydınız alındı — WhatsApp onayı bekleniyor (#' . $orderNumber . ')';
+    $mailSubject = order_mail_notification_subject('pending_confirmation', (string)$orderNumber, 'order_received');
     $notificationId = queue_order_email_notification($pdo,$orderId,'order_received',hash('sha256','order_received:' . $requestKey),$email,$mailSubject);
     $pdo->commit();
     $mailResult = dispatch_order_email_notification($pdo,$notificationId);

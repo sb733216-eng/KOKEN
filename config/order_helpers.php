@@ -4,8 +4,8 @@ declare(strict_types=1);
 function order_status_labels(): array
 {
     return [
-        'pending_confirmation' => 'WhatsApp onayı bekleniyor',
-        'confirmed' => 'Onaylandı',
+        'pending_confirmation' => 'Beklemede',
+        'confirmed' => 'Sipariş alındı',
         'preparing' => 'Hazırlanıyor',
         'shipped' => 'Kargoda',
         'completed' => 'Tamamlandı',
@@ -29,7 +29,8 @@ function order_payment_status_labels(): array
         'awaiting_payment' => 'Ödeme bekleniyor',
         'collect_on_delivery' => 'Kapıda tahsil edilecek',
         'paid' => 'Ödendi (yönetici işaretledi)',
-        'refunded' => 'İade edildi (yönetici işaretledi)',
+        'partially_refunded' => 'Kısmi iade kaydı',
+        'refunded' => 'İade durumu işaretlendi (para transferi yapılmadı)',
     ];
 }
 
@@ -43,7 +44,7 @@ function order_email_status_label(?string $status, ?string $errorCode = null): s
     $label = match ($status) {
         'pending' => 'Gönderim bekliyor',
         'sending' => 'Gönderim sürüyor; sonucu kontrol edin',
-        'sent' => 'SMTP sunucusu kabul etti',
+        'sent' => 'E-posta sunucusuna iletildi',
         'failed' => 'Gönderilemedi',
         default => 'E-posta kaydı yok',
     };

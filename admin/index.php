@@ -5,16 +5,16 @@ require_admin();
 $totalProducts = (int)$pdo->query('SELECT COUNT(*) FROM products')->fetchColumn();
 $activeProducts = (int)$pdo->query('SELECT COUNT(*) FROM products WHERE is_active = 1')->fetchColumn();
 $categoryCount = (int)$pdo->query('SELECT COUNT(*) FROM categories')->fetchColumn();
-$pendingOrders = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pending_confirmation'")->fetchColumn();
+$pendingOrders = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE deleted_at IS NULL AND status = 'pending_confirmation'")->fetchColumn();
 $lowStockThreshold = (int)($pdo->query("SELECT setting_value FROM store_settings WHERE setting_key = 'low_stock_threshold'")->fetchColumn() ?: 5);
 $lowStockCount = (int)$pdo->query('SELECT COUNT(*) FROM products WHERE stock_qty IS NOT NULL AND stock_qty <= ' . $lowStockThreshold)->fetchColumn();
 
 $today = new DateTimeImmutable('today');
 $dailyMap = [];
 $monthlyMap = [];
-$dailyRows = $pdo->query("SELECT DATE(created_at) AS period, COUNT(*) AS order_count, COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total ELSE 0 END), 0) AS revenue FROM orders WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) GROUP BY DATE(created_at)")->fetchAll();
+$dailyRows = $pdo->query("SELECT DATE(created_at) AS period, COUNT(*) AS order_count, COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total ELSE 0 END), 0) AS revenue FROM orders WHERE deleted_at IS NULL AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) GROUP BY DATE(created_at)")->fetchAll();
 foreach ($dailyRows as $row) $dailyMap[$row['period']] = $row;
-$monthlyRows = $pdo->query("SELECT DATE_FORMAT(created_at, '%Y-%m') AS period, COUNT(*) AS order_count, COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total ELSE 0 END), 0) AS revenue FROM orders WHERE created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01') GROUP BY DATE_FORMAT(created_at, '%Y-%m')")->fetchAll();
+$monthlyRows = $pdo->query("SELECT DATE_FORMAT(created_at, '%Y-%m') AS period, COUNT(*) AS order_count, COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total ELSE 0 END), 0) AS revenue FROM orders WHERE deleted_at IS NULL AND created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01') GROUP BY DATE_FORMAT(created_at, '%Y-%m')")->fetchAll();
 foreach ($monthlyRows as $row) $monthlyMap[$row['period']] = $row;
 
 $daily = [];

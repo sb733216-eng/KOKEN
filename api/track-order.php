@@ -29,12 +29,12 @@ try {
     error_log('Order tracking rate limit unavailable: ' . $exception->getMessage());
     track_json(['error' => 'Sipariş takip hizmeti şu anda kullanılamıyor.'], 503);
 }
-$find = $pdo->prepare('SELECT id,order_number,order_date,status,carrier,tracking_number,created_at,updated_at FROM orders WHERE (order_number=:number OR tracking_code=:legacy_code) AND phone=:phone ORDER BY order_date DESC,id DESC LIMIT 1');
+$find = $pdo->prepare('SELECT id,order_number,order_date,status,carrier,tracking_number,created_at,updated_at FROM orders WHERE deleted_at IS NULL AND (order_number=:number OR tracking_code=:legacy_code) AND phone=:phone ORDER BY order_date DESC,id DESC LIMIT 1');
 $find->execute(['number' => $code, 'legacy_code' => $code, 'phone' => $phone]);
 $order = $find->fetch();
 if (!$order) track_json(['error' => 'Bu kod ve telefonla eşleşen sipariş bulunamadı. Bilgileri kontrol edip tekrar deneyin.'], 404);
 $labels = [
-    'pending_confirmation' => 'WhatsApp onayı bekleniyor', 'confirmed' => 'Sipariş onaylandı',
+    'pending_confirmation' => 'Beklemede', 'confirmed' => 'Sipariş alındı',
     'preparing' => 'Sipariş hazırlanıyor', 'shipped' => 'Sipariş kargoya verildi',
     'completed' => 'Sipariş tamamlandı', 'cancelled' => 'Sipariş iptal edildi',
 ];

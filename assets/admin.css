@@ -98,6 +98,34 @@ body{font-size:15px}
 .products-table tbody td{border-color:#dfe6e1}
 @media(max-width:575px){.content-card,.stat-card{box-shadow:0 1px 5px rgba(23,33,29,.05)}.table-responsive{border-radius:8px}}
 
+/* Sipariş yönetimi: okunabilir özet, açılır ayrıntı ve mobil kartlar. */
+.orders-result-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:0 2px 12px;color:#56635b;font-size:12px}
+.orders-result-bar strong{color:#17211d}
+.orders-card{padding:12px}
+.orders-table{min-width:980px;margin:0}
+.orders-table thead th{background:#f1f7f3;color:#425349;font-size:11px;white-space:nowrap}
+.orders-table tbody td{font-size:13px;border-color:#e9efeb;vertical-align:middle;overflow-wrap:anywhere}
+.order-summary-row:hover{background:#f7fbf8}
+.order-number-link{border:0;background:transparent;color:#116746;font-weight:800;text-decoration:underline;text-underline-offset:3px;padding:0;cursor:pointer}
+.order-state{display:inline-flex;max-width:190px;padding:5px 9px;border:1px solid #c8dfd1;border-radius:30px;background:#edf7f1;color:#245f42;font-size:11px;font-weight:700;white-space:normal;overflow-wrap:anywhere}
+.order-state-payment{background:#f5f8f6;color:#4a5b50;border-color:#d8e2dc}
+.order-detail-panel{padding:20px;background:#f8fbf9;border:1px solid #ccdbd1;border-radius:12px}
+.detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.detail-heading h2{font:700 20px Manrope,sans-serif;margin:0;color:#17211d}
+.detail-heading p{color:#66736b;margin:5px 0 0;font-size:12px}
+.detail-section{height:100%;padding:16px;background:#fff;border:1px solid #d6e1da;border-radius:10px;min-width:0}
+.detail-section h3{font:700 15px Manrope,sans-serif;margin:0 0 13px;color:#145d3c}
+.order-definition-list{display:grid;grid-template-columns:minmax(100px,140px) minmax(0,1fr);gap:7px 12px;margin:0;font-size:13px}
+.order-definition-list dt{color:#647168;font-weight:700}.order-definition-list dd{margin:0;overflow-wrap:anywhere}
+.detail-items-table{min-width:0;margin:0;font-size:12px}.detail-items-table th,.detail-items-table td{padding:7px;border-color:#e7eee9;overflow-wrap:anywhere}.detail-items-table tfoot th{text-align:right}
+.detail-form .form-label{display:block;margin-bottom:8px}.detail-form .form-control,.detail-form .form-select{min-width:0;white-space:normal}.detail-form .btn{max-width:100%;white-space:normal}
+.detail-history{display:grid;gap:8px;margin-top:12px;max-height:360px;overflow:auto}.detail-history article,.email-log{padding:10px 12px;border:1px solid #e0e9e3;border-radius:8px;background:#fbfdfb;overflow-wrap:anywhere}.detail-history article p{margin:5px 0}.detail-history article small,.email-log small{display:block;color:#66736b;margin-top:5px;line-height:1.5}.email-log{margin-top:8px}.email-log>div{font-size:12px;margin-top:3px}
+.orders-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 4px 22px;color:#59665e;font-size:12px}.orders-pagination>div{display:flex;gap:5px;flex-wrap:wrap}
+.nav-overlay{display:none}
+@media(max-width:900px){.nav-overlay{position:fixed;z-index:4;inset:0;border:0;background:rgba(18,32,24,.35)}.nav-open .nav-overlay{display:block}.sidebar{z-index:6}.nav-open .sidebar{z-index:6}.menu-toggle{position:relative;z-index:7}}
+@media(max-width:767px){.orders-card{padding:8px}.orders-table{min-width:0}.orders-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.orders-table,.orders-table tbody{display:block;width:100%}.orders-table .order-summary-row{display:block;margin:8px 0 14px;padding:7px;background:#fff;border:1px solid #cbdacf;border-radius:10px;box-shadow:0 2px 7px rgba(23,33,29,.05)}.orders-table .order-summary-row td{display:grid;grid-template-columns:minmax(95px,34%) minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:8px 6px;border:0;border-bottom:1px solid #eef2ef;text-align:left;white-space:normal}.orders-table .order-summary-row td:last-child{border-bottom:0}.orders-table .order-summary-row td::before{content:attr(data-label);font-size:11px;font-weight:700;color:#536157}.orders-table .order-detail-row{display:block;margin:-8px 0 12px}.orders-table .order-detail-row>td{display:block;width:100%;padding:0;border:0}.orders-table .order-detail-row[hidden]{display:none!important}.order-detail-panel{padding:12px}.detail-section{padding:12px}.order-definition-list{grid-template-columns:minmax(85px,110px) minmax(0,1fr);font-size:12px}.detail-heading{align-items:center}.orders-result-bar{gap:8px}.orders-pagination{justify-content:center}.orders-pagination>span{width:100%;text-align:center}}
+@media(max-width:420px){.orders-table .order-summary-row td{grid-template-columns:minmax(82px,31%) minmax(0,1fr);font-size:12px}.detail-items-table{font-size:11px}.detail-items-table th,.detail-items-table td{padding:5px 3px}.detail-heading h2{font-size:17px}}
+
 
 /* Shared borders and table readability across admin sections */
 .sidebar{border-right:1px solid #cbd7cf}
@@ -126,3 +154,59 @@ body{font-size:15px}
 
 
 .page-content>form.content-card.row{margin-right:0;margin-left:0}
+
+/* Siparişler sayfası: mağaza paleti ve kısa, kolay taranan özetler. */
+.admin-orders-page{--order-green:#1C5A27;--order-green-dark:#14421C;--order-bg:#F9F8F6;--order-card:#FFFFFF;--order-line:#E7E3DC;--order-ink:#2A2A26;--order-muted:#6D6B64;--order-gold:#C29B38;background:var(--order-bg);color:var(--order-ink);font-family:Inter,Arial,sans-serif}
+.admin-orders-page .main-panel,.admin-orders-page .page-content{background:var(--order-bg)}
+.admin-orders-page .page-heading h1,.admin-orders-page .detail-heading h2,.admin-orders-page .detail-section h3{font-family:Fraunces,Georgia,serif;color:var(--order-green-dark)}
+.admin-orders-page .page-heading h1{font-size:30px;letter-spacing:-.025em}
+.admin-orders-page .page-heading{flex-wrap:wrap;row-gap:12px}
+.admin-orders-page .orders-filter-form{display:grid;grid-template-columns:minmax(200px,1.7fr) repeat(4,minmax(125px,1fr)) minmax(145px,auto);gap:12px;margin-right:0;margin-left:0}
+.admin-orders-page .orders-filter-form>[class*="col-"]{width:auto;max-width:none;padding:0;margin:0}
+.admin-orders-page .orders-filter-form>.col-md-1{flex-wrap:wrap}
+.admin-orders-page .content-card,.admin-orders-page .order-detail-panel,.admin-orders-page .detail-section{background:var(--order-card);border-color:#D6D0C5;box-shadow:0 2px 7px rgba(42,42,38,.045)}
+.admin-orders-page .content-card{border:1px solid #D6D0C5;border-radius:12px}
+.admin-orders-page .orders-result-bar{padding:11px 14px;border:1px solid #D6D0C5;border-radius:10px;background:#fff;color:var(--order-muted)}
+.admin-orders-page .orders-result-bar strong{color:var(--order-ink)}
+.admin-orders-page .form-label,.admin-orders-page .table,.admin-orders-page button,.admin-orders-page input,.admin-orders-page select{font-family:Inter,Arial,sans-serif}
+.admin-orders-page .form-label{color:var(--order-ink);font-size:12px;font-weight:600}
+.admin-orders-page .form-control,.admin-orders-page .form-select{border:1px solid #CFC9BE;border-radius:9px;color:var(--order-ink);min-width:0}
+.admin-orders-page .form-control:focus,.admin-orders-page .form-select:focus{border-color:var(--order-green);box-shadow:0 0 0 .18rem rgba(28,90,39,.12)}
+.admin-orders-page .btn{border-radius:999px}
+.admin-orders-page .btn-primary{--bs-btn-bg:var(--order-green);--bs-btn-border-color:var(--order-green);--bs-btn-hover-bg:var(--order-green-dark);--bs-btn-hover-border-color:var(--order-green-dark)}
+.admin-orders-page .btn-outline-success{--bs-btn-color:var(--order-green);--bs-btn-border-color:#9cb99f;--bs-btn-hover-bg:var(--order-green);--bs-btn-hover-border-color:var(--order-green)}
+.admin-orders-page .orders-card{padding:10px;border:1px solid #D0C9BD;border-radius:12px}
+.admin-orders-page .orders-card .table-responsive{border:1px solid #D6D0C5;border-radius:9px}
+.admin-orders-page .orders-table{min-width:1040px}
+.admin-orders-page .orders-table thead th{background:#F3F2EE;color:var(--order-muted);border-color:#D0C9BD;font-size:10px;letter-spacing:.07em}
+.admin-orders-page .orders-table tbody td{color:var(--order-ink);border-color:#DED9D0;font-size:12px;line-height:1.4}
+.admin-orders-page .orders-table tbody .order-detail-row>td{padding:10px;background:#EEF5EF;border:1px solid #C6D8C8}
+.admin-orders-page .orders-table .text-secondary,.admin-orders-page .orders-table small{color:var(--order-muted)!important}
+.admin-orders-page .order-number-link,.admin-orders-page .orders-table a{color:var(--order-green);font-family:Inter,Arial,sans-serif}
+.admin-orders-page .orders-table td[data-label="Toplam"],.admin-orders-page .orders-table td[data-label="Sipariş no / tarih"],.admin-orders-page .orders-table td[data-label="Müşteri"] a{white-space:nowrap}
+.admin-orders-page .orders-table td[data-label="Sipariş no / tarih"] small{white-space:nowrap}
+.admin-orders-page .order-state{max-width:170px;border-color:#CFC9BE;background:#eef4ed;color:var(--order-green-dark);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-orders-page .order-state-payment{background:#f4f2ec;border-color:#D6D0C5;color:var(--order-ink)}
+.admin-orders-page .order-row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.admin-orders-page .order-delete-trigger{--bs-btn-color:#B42318;--bs-btn-border-color:#E8B8B4;--bs-btn-hover-color:#fff;--bs-btn-hover-bg:#B42318;--bs-btn-hover-border-color:#B42318}
+.admin-orders-page .detail-heading h2{font-size:23px}
+.admin-orders-page .detail-section h3{font-size:17px}
+.admin-orders-page .detail-heading p,.admin-orders-page .detail-section small{color:var(--order-muted)}
+.admin-orders-page .order-detail-panel{border:1px solid #D0C9BD;padding:20px}
+.admin-orders-page .detail-section{border:1px solid #D6D0C5;border-radius:10px;box-shadow:0 2px 6px rgba(42,42,38,.04)}
+.admin-orders-page .detail-history article,.admin-orders-page .email-log{border:1px solid #D8D2C8;background:#FCFBF9}
+.admin-orders-page .detail-items-table th,.admin-orders-page .detail-items-table td{border-color:#DCD6CC}
+.admin-orders-page .shipping-summary{padding:10px 12px;border:1px solid #D8D2C8;border-radius:8px;background:#FCFBF9}
+.admin-orders-page .order-delete-dialog{position:fixed;inset:0;margin:auto;width:min(440px,calc(100vw - 28px));max-width:none;padding:26px;border:1px solid var(--order-line);border-radius:16px;background:var(--order-card);color:var(--order-ink);box-shadow:0 22px 70px #1d251c40}
+.admin-orders-page .order-delete-dialog::backdrop{background:#17231878;backdrop-filter:blur(2px)}
+.admin-orders-page .order-delete-dialog h2{font:700 25px Fraunces,Georgia,serif;color:var(--order-green-dark);margin:0 35px 10px 0}
+.admin-orders-page .order-delete-dialog p{color:var(--order-muted);margin:0 0 24px;line-height:1.55}
+.admin-orders-page .order-dialog-close{position:absolute;top:12px;right:14px;border:0;background:transparent;color:var(--order-muted);font-size:26px;line-height:1;cursor:pointer}
+.admin-orders-page .order-dialog-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.admin-orders-page .order-dialog-actions .btn-outline-danger{--bs-btn-color:#B42318;--bs-btn-border-color:#E8B8B4;--bs-btn-hover-color:#fff;--bs-btn-hover-bg:#B42318;--bs-btn-hover-border-color:#B42318}
+.admin-orders-page .order-dialog-actions .btn:disabled{opacity:.65;cursor:wait}
+@media(max-width:767px){.admin-orders-page .orders-table{min-width:0}.admin-orders-page .orders-table .order-summary-row{border-color:#D0C9BD;border-radius:12px}.admin-orders-page .orders-table .order-summary-row td{white-space:normal;border-bottom:1px solid #E0DBD2}.admin-orders-page .orders-table .order-summary-row td:last-child{border-bottom:0}.admin-orders-page .orders-table .order-summary-row td[data-label="Toplam"] strong,.admin-orders-page .orders-table .order-summary-row td[data-label="Sipariş no / tarih"] button,.admin-orders-page .orders-table .order-summary-row td[data-label="Müşteri"] a{white-space:nowrap}.admin-orders-page .order-row-actions{gap:6px}.admin-orders-page .order-delete-dialog{padding:23px 18px}}
+@media(max-width:767px){.admin-orders-page .orders-table tbody .order-detail-row>td{padding:7px;border-color:#C6D8C8}}
+@media(max-width:1100px){.admin-orders-page .orders-filter-form{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.admin-orders-page .orders-filter-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.admin-orders-page .orders-filter-form>.col-md-1{grid-column:1/-1}.admin-orders-page .orders-filter-form>.col-md-1 .btn{flex:1}}
+@media(max-width:390px){.admin-orders-page .orders-table .order-summary-row td{grid-template-columns:minmax(75px,30%) minmax(0,1fr);gap:6px;font-size:11px}.admin-orders-page .order-row-actions .btn{padding:5px 9px;font-size:11px}.admin-orders-page .page-heading h1{font-size:26px}}
