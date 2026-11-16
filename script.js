@@ -1,6 +1,6 @@
 /* ===================== AYARLAR (kolayca değiştirilebilir) ===================== */
 // MySQL kataloğu ana kaynaktır; bağlantı kesilirse yedek kayıtlar satışa kapalı gösterilir.
-const WHATSAPP_NO = "905313385955"; // Ülke koduyla, + ve boşluk olmadan. Örn: 905321234567
+const WHATSAPP_NO = "905395982499"; // Ülke koduyla, + ve boşluk olmadan. Örn: 905321234567
 let FREE_SHIPPING_LIMIT = 2000;      // Veritabanındaki mağaza ayarlarından yüklenir.
 let SHIPPING_FEE = 60;
 let LOW_STOCK_THRESHOLD = 5;

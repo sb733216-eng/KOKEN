@@ -91,7 +91,7 @@ function order_mail_money(float|string $value): string
 
 function order_mail_whatsapp_url(array $order): string
 {
-    return 'https://api.whatsapp.com/send?phone=905313385955';
+    return 'https://api.whatsapp.com/send?phone=905395982499';
 }
 
 function order_mail_status_presentation(string $status, bool $received): array

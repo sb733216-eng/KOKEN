@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__, 2) . '/private/koken-db.php';
+
 $httpHostHeader = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
 $parsedHost = parse_url('http://' . $httpHostHeader, PHP_URL_HOST);
 $httpHost = strtolower(is_string($parsedHost) ? $parsedHost : '');
