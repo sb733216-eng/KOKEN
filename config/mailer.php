@@ -20,7 +20,7 @@ function order_mail_configuration(): array
     if (is_array($configuration ?? null)) return $configuration;
 
     $localPath = trim((string)(getenv('KOKEN_MAIL_CONFIG') ?: ''));
-    if ($localPath === '') $localPath = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . 'koken-mail.php';
+   if ($localPath === '') $localPath = dirname(__DIR__, 2) . '/private/koken-mail.php';
     $local = [];
     $configError = null;
     if (is_file($localPath)) {
@@ -44,7 +44,7 @@ function order_mail_configuration(): array
         if ($environmentValue !== false) return $environmentValue;
         return $local[$key] ?? $default;
     };
-    $mailAddress = trim((string)$readSetting('MAIL_ADDRESS', 'address', 'sb733216@gmail.com'));
+    $mailAddress = trim((string)$readSetting('MAIL_ADDRESS', 'address', 'info@kokenfindik.com'));
     $smtpUsername = trim((string)$readSetting('SMTP_USERNAME', 'username', ''));
     $fromAddress = trim((string)$readSetting('MAIL_FROM_ADDRESS', 'from_address', ''));
     if ($smtpUsername === '') $smtpUsername = $mailAddress;
@@ -68,7 +68,7 @@ function order_mail_health(): array
     $config = order_mail_configuration();
     $missing = [];
     if ($config['config_error'] !== null) $missing[] = 'KOKEN_MAIL_CONFIG';
-    if ($config['host'] !== 'smtp.gmail.com') $missing[] = 'SMTP_HOST (smtp.gmail.com olmalı)';
+    if ($config['host'] !== 'smtp.turkticaret.net') { $missing[] = 'SMTP_HOST (smtp.turkticaret.net olmalı)';}
     if ($config['port'] !== 587) $missing[] = 'SMTP_PORT (587 olmalı)';
     if ($config['encryption'] !== 'starttls') $missing[] = 'SMTP_ENCRYPTION (starttls olmalı)';
     if ($config['username'] === '' || filter_var($config['username'], FILTER_VALIDATE_EMAIL) === false) $missing[] = 'SMTP_USERNAME';
