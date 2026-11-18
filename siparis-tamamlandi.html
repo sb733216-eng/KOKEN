@@ -29,9 +29,9 @@
 <section class="order-success" aria-labelledby="successTitle">
 <div class="order-success__icon" aria-hidden="true">✓</div>
 <h1 id="successTitle">Siparişiniz kaydedildi</h1>
-<p>Sipariş kaydınız veritabanına ulaştı. Bu kayıt, satıcının siparişi onayladığı anlamına gelmez.</p>
+<p>Siparişiniz kaydedildi ve hazırlık sürecine alındı. Güncel durumunu aşağıdaki bağlantıdan takip edebilirsiniz.</p>
 <p id="orderCode" class="order-success__code" aria-live="polite"></p>
-<div class="order-success__notice"><strong>Siparişin işleme alınması için WhatsApp bildirimi gereklidir.</strong><br>Buton WhatsApp mesaj taslağını açar. Mesajı uygulamada sizin göndermeniz gerekir; bağlantıyı açmak mesajın gönderildiği veya siparişin onaylandığı anlamına gelmez. WhatsApp açılamazsa sipariş numaranız bu sayfada kalır ve butonu yeniden deneyebilirsiniz.</div>
+<div class="order-success__notice"><strong>Siparişiniz hakkında WhatsApp üzerinden bize ulaşabilirsiniz.</strong><br>Buton, sipariş numaranızı içeren bir mesaj taslağı açar. Mesajı WhatsApp uygulamasında gönderebilirsiniz.</div>
 <p id="emailMessage" class="order-success__status" role="status" aria-live="polite"></p>
 <p id="sampleIbanNotice" class="order-success__notice" hidden>Havale/EFT seçtiyseniz, gösterilen IBAN test amaçlı örnektir; gerçek ödeme göndermeyin.</p>
 <div class="order-success__actions">
@@ -57,13 +57,13 @@
   document.getElementById('sampleIbanNotice').hidden = payment !== 'iban';
   if (validCode) {
     document.getElementById('trackLink').href = 'siparis-takibi.html?order=' + encodeURIComponent(order);
-    const message = 'Merhaba, #' + order + ' numaralı siparişimi kaydettim. Siparişimin onaylanmasını rica ederim.';
+    const message = 'Merhaba, #' + order + ' numaralı siparişimi kaydettim. Siparişim hakkında bilgi almak istiyorum.';
     whatsapp.href = 'https://api.whatsapp.com/send?phone=905395982499&text=' + encodeURIComponent(message);
     whatsapp.hidden = false;
   }
   if (email === 'sent') emailMessage.textContent = 'Sipariş özeti e-posta sunucusuna iletildi. Bu durum, e-postanın gelen kutusuna teslim edildiğini garanti etmez.';
-  else if (email === 'failed') emailMessage.textContent = 'E-posta gönderilemedi; sipariş kaydınız etkilenmedi. Sipariş numaranızı WhatsApp üzerinden bildirin.';
-  else emailMessage.textContent = 'E-posta bildirimi gönderim durumu şu anda doğrulanamadı. Sipariş kaydınız için yukarıdaki WhatsApp bildirim adımını tamamlayın.';
+  else if (email === 'failed') emailMessage.textContent = 'E-posta gönderilemedi; siparişiniz kaydedildi. Güncel durumu takip bağlantısından görebilirsiniz.';
+  else emailMessage.textContent = 'E-posta bildiriminin durumu şu anda doğrulanamadı. Siparişinizin güncel durumunu takip bağlantısından görebilirsiniz.';
 })();
 </script>
 </body>

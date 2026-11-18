@@ -954,7 +954,7 @@ const FALLBACK_PRODUCTS = [
       <p>Kırma, kavurma, ezme ve paketleme işlemleri kendi tesisimizde yapılır.</p>
       <p>[Tesis adresi, kapasite, hijyen ve kalite belgeleri buraya yazılabilir.]</p>` },
     takip: { title: 'Sipariş Takibi', html: NOTE + `
-      <p>Siparişiniz kaydedildikten sonra kısa sipariş numarası ve siparişte kullandığınız telefonla <a href="siparis-takibi.html">Sipariş Takibi</a> sayfasından durumunu kontrol edebilirsiniz. Siparişin işleme alınması için sipariş numaranızı WhatsApp üzerinden satıcıya bildirmeniz gerekir.</p>
+      <p>Siparişiniz kaydedildikten sonra kısa sipariş numarası ve siparişte kullandığınız telefonla <a href="siparis-takibi.html">Sipariş Takibi</a> sayfasından durumunu kontrol edebilirsiniz. Sorularınız için sipariş numaranızla WhatsApp üzerinden bize ulaşabilirsiniz.</p>
       <p>Kargoya verildiğinde takip numaranız tarafınıza iletilir.</p>` },
     satis: { title: 'Mesafeli Satış Sözleşmesi', html: NOTE + `
       <h4>Madde 1 – Taraflar</h4>

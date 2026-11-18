@@ -4,8 +4,6 @@ declare(strict_types=1);
 function order_status_labels(): array
 {
     return [
-        'pending_confirmation' => 'Beklemede',
-        'confirmed' => 'Sipariş alındı',
         'preparing' => 'Hazırlanıyor',
         'shipped' => 'Kargoda',
         'completed' => 'Tamamlandı',
@@ -13,22 +11,31 @@ function order_status_labels(): array
     ];
 }
 
+function order_status_key(?string $status): string
+{
+    return in_array($status, ['pending_confirmation', 'confirmed'], true) ? 'preparing' : (string)$status;
+}
+
+function order_status_label(?string $status): string
+{
+    return order_status_labels()[order_status_key($status)] ?? '—';
+}
+
 function order_payment_method_label(?string $method): string
 {
     return match ($method) {
         'iban' => 'Havale / EFT',
         'kapida' => 'Kapıda Ödeme',
-        default => 'Belirtilmemiş',
+        default => '—',
     };
 }
 
 function order_payment_status_labels(): array
 {
     return [
-        'unspecified' => 'Belirtilmemiş',
         'awaiting_payment' => 'Ödeme bekleniyor',
         'collect_on_delivery' => 'Kapıda tahsil edilecek',
-        'paid' => 'Ödendi (yönetici işaretledi)',
+        'paid' => 'Ödendi',
         'partially_refunded' => 'Kısmi iade kaydı',
         'refunded' => 'İade durumu işaretlendi (para transferi yapılmadı)',
     ];
@@ -36,7 +43,7 @@ function order_payment_status_labels(): array
 
 function order_payment_status_label(?string $status): string
 {
-    return order_payment_status_labels()[$status ?? ''] ?? 'Belirtilmemiş';
+    return order_payment_status_labels()[$status ?? ''] ?? '—';
 }
 
 function order_email_status_label(?string $status, ?string $errorCode = null): string

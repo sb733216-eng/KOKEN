@@ -96,19 +96,12 @@ function order_mail_whatsapp_url(array $order): string
 
 function order_mail_status_presentation(string $status, bool $received): array
 {
-    if ($received) return [
-        'subject' => 'Siparişiniz kaydedildi',
-        'label' => 'Kayıt alındı',
-        'description' => 'Siparişinizi kaydettik. Siparişiniz satıcı onayından sonra işleme alınacaktır.',
-    ];
-
+    $status = order_status_key($status);
     return match ($status) {
-        'confirmed' => ['subject'=>'Siparişiniz onaylandı','label'=>'Onaylandı','description'=>'Siparişiniz onaylandı ve işleme alındı.'],
-        'preparing' => ['subject'=>'Siparişiniz hazırlanıyor','label'=>'Hazırlanıyor','description'=>'Siparişiniz özenle hazırlanıyor.'],
+        'preparing' => ['subject'=>'Siparişiniz hazırlanıyor','label'=>'Hazırlanıyor','description'=>$received ? 'Siparişiniz kaydedildi ve hazırlık sürecine alındı.' : 'Siparişiniz özenle hazırlanıyor.'],
         'shipped' => ['subject'=>'Siparişiniz kargoya verildi','label'=>'Kargoya verildi','description'=>'Siparişiniz kargoya verildi. Kargo bilgilerini aşağıda bulabilirsiniz.'],
         'completed' => ['subject'=>'Siparişiniz tamamlandı','label'=>'Tamamlandı','description'=>'Siparişiniz tamamlandı. Bizi tercih ettiğiniz için teşekkür ederiz.'],
         'cancelled' => ['subject'=>'Siparişiniz iptal edildi','label'=>'İptal edildi','description'=>'Siparişiniz iptal edildi.'],
-        'pending_confirmation' => ['subject'=>'Siparişiniz kaydedildi','label'=>'Beklemede','description'=>'Siparişiniz satıcı onayından sonra işleme alınacaktır.'],
         default => ['subject'=>'Sipariş bilgileriniz güncellendi','label'=>'Güncellendi','description'=>'Sipariş bilgileriniz güncellendi.'],
     };
 }

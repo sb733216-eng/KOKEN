@@ -9,6 +9,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/rate_limit.php';
+require_once __DIR__ . '/../config/order_helpers.php';
 function track_json(array $data, int $status = 200): never { http_response_code($status); echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (empty($_SESSION['track_csrf'])) $_SESSION['track_csrf'] = bin2hex(random_bytes(32));
@@ -34,7 +35,6 @@ $find->execute(['number' => $code, 'legacy_code' => $code, 'phone' => $phone]);
 $order = $find->fetch();
 if (!$order) track_json(['error' => 'Bu kod ve telefonla eşleşen sipariş bulunamadı. Bilgileri kontrol edip tekrar deneyin.'], 404);
 $labels = [
-    'pending_confirmation' => 'Beklemede', 'confirmed' => 'Sipariş alındı',
     'preparing' => 'Sipariş hazırlanıyor', 'shipped' => 'Sipariş kargoya verildi',
     'completed' => 'Sipariş tamamlandı', 'cancelled' => 'Sipariş iptal edildi',
 ];
@@ -43,8 +43,8 @@ $items->execute(['id' => $order['id']]);
 track_json([
     'code' => $order['order_number'],
     'date' => $order['order_date'],
-    'status' => $labels[$order['status']] ?? 'Sipariş durumu güncelleniyor',
-    'statusCode' => $order['status'],
+    'status' => $labels[order_status_key($order['status'])] ?? 'Sipariş durumu güncelleniyor',
+    'statusCode' => order_status_key($order['status']),
     'carrier' => $order['carrier'],
     'trackingNumber' => $order['tracking_number'],
     'updatedAt' => $order['updated_at'],

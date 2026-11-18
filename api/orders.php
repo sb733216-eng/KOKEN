@@ -119,7 +119,7 @@ try {
     $nextCode->execute(['value' => $orderNumber]);
     $paymentStatus = $payment === 'iban' ? 'awaiting_payment' : 'collect_on_delivery';
     $insertOrder = $pdo->prepare('INSERT INTO orders (order_number,tracking_code,request_key,order_date,customer_name,phone,customer_email,email_notifications,city,district,address,note,payment_method,payment_status,subtotal,shipping_fee,total,status) VALUES (:number,:tracking_code,:request_key,:order_date,:name,:phone,:email,:email_notifications,:city,:district,:address,:note,:payment,:payment_status,:subtotal,:shipping,:total,:status)');
-    $insertOrder->execute(['number' => $orderNumber, 'tracking_code' => $trackingCode, 'request_key' => $requestKey, 'order_date' => $orderDate, 'name' => $name, 'phone' => $phone, 'email' => $email, 'email_notifications' => 1, 'city' => $city, 'district' => $district, 'address' => $address, 'note' => $note, 'payment' => $payment, 'payment_status' => $paymentStatus, 'subtotal' => number_format($subtotalCents / 100, 2, '.', ''), 'shipping' => number_format($feeCents / 100, 2, '.', ''), 'total' => number_format($totalCents / 100, 2, '.', ''), 'status' => 'pending_confirmation']);
+    $insertOrder->execute(['number' => $orderNumber, 'tracking_code' => $trackingCode, 'request_key' => $requestKey, 'order_date' => $orderDate, 'name' => $name, 'phone' => $phone, 'email' => $email, 'email_notifications' => 1, 'city' => $city, 'district' => $district, 'address' => $address, 'note' => $note, 'payment' => $payment, 'payment_status' => $paymentStatus, 'subtotal' => number_format($subtotalCents / 100, 2, '.', ''), 'shipping' => number_format($feeCents / 100, 2, '.', ''), 'total' => number_format($totalCents / 100, 2, '.', ''), 'status' => 'preparing']);
     $orderId = (int)$pdo->lastInsertId();
     $insertItem = $pdo->prepare('INSERT INTO order_items (order_id,product_id,product_title,variant_label,unit_price,quantity,line_total) VALUES (:order_id,:product_id,:title,:variant,:price,:quantity,:line_total)');
     $updateStock = $pdo->prepare('UPDATE products SET stock_qty = stock_qty - :quantity WHERE id = :id AND stock_qty IS NOT NULL AND stock_qty >= :quantity_check');
@@ -136,9 +136,9 @@ try {
         }
     }
     $history = $pdo->prepare('INSERT INTO order_status_history (order_id,field_name,previous_value,new_value,changed_by) VALUES (:order_id,:field,NULL,:value,NULL)');
-    $history->execute(['order_id'=>$orderId,'field'=>'status','value'=>'pending_confirmation']);
+    $history->execute(['order_id'=>$orderId,'field'=>'status','value'=>'preparing']);
     $history->execute(['order_id'=>$orderId,'field'=>'payment_status','value'=>$paymentStatus]);
-    $mailSubject = order_mail_notification_subject('pending_confirmation', (string)$orderNumber, 'order_received');
+    $mailSubject = order_mail_notification_subject('preparing', (string)$orderNumber, 'order_received');
     $notificationId = queue_order_email_notification($pdo,$orderId,'order_received',hash('sha256','order_received:' . $requestKey),$email,$mailSubject);
     $pdo->commit();
     $mailResult = dispatch_order_email_notification($pdo,$notificationId);
