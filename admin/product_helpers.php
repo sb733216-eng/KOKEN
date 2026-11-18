@@ -22,6 +22,7 @@ function text_length(string $value): int
 function product_slugify(string $value): string
 {
     $value = trim($value);
+    $value = strtr($value, ['Ç'=>'c','ç'=>'c','Ğ'=>'g','ğ'=>'g','İ'=>'i','I'=>'i','ı'=>'i','Ö'=>'o','ö'=>'o','Ş'=>'s','ş'=>'s','Ü'=>'u','ü'=>'u']);
     $ascii = function_exists('iconv') ? iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) : false;
     if (is_string($ascii)) $value = $ascii;
     $value = strtolower($value);
@@ -42,7 +43,10 @@ function unique_product_slug(PDO $pdo, string $requested, ?int $excludeId = null
         $params = ['slug' => $candidate];
         if ($excludeId) $params['id'] = $excludeId;
         $stmt->execute($params);
-        if (!$stmt->fetchColumn()) return $candidate;
+        $used = (bool)$stmt->fetchColumn();
+        $redirect = $pdo->prepare('SELECT product_id FROM product_slug_redirects WHERE slug = :slug' . ($excludeId ? ' AND product_id <> :id' : '') . ' LIMIT 1');
+        $redirect->execute($params);
+        if (!$used && !$redirect->fetchColumn()) return $candidate;
         $tail = '-' . $suffix++;
         $candidate = substr($base, 0, 220 - strlen($tail)) . $tail;
     }
@@ -140,7 +144,13 @@ function validate_product_input(array $input, PDO $pdo, ?int $excludeId = null):
     $ingredients = trim((string)($input['ingredients'] ?? ''));
     $seoTitle = trim((string)($input['seo_title'] ?? ''));
     $seoDescription = trim((string)($input['seo_description'] ?? ''));
-    $slug = unique_product_slug($pdo, trim((string)($input['slug'] ?? '')) !== '' ? (string)$input['slug'] : $title, $excludeId);
+    $requestedSlug = trim((string)($input['slug'] ?? ''));
+    if ($requestedSlug === '' && $excludeId) {
+        $existingSlug = $pdo->prepare('SELECT slug FROM products WHERE id = :id');
+        $existingSlug->execute(['id' => $excludeId]);
+        $requestedSlug = (string)($existingSlug->fetchColumn() ?: '');
+    }
+    $slug = unique_product_slug($pdo, $requestedSlug !== '' ? $requestedSlug : $title, $excludeId);
     $badges = trim((string)($input['badges'] ?? ''));
     if (text_length($description) > 10000) throw new RuntimeException('Açıklama 10.000 karakteri geçemez.');
     if (text_length($weight) > 80 || text_length($chip) > 120) throw new RuntimeException('Gramaj 80, rozet metni 120 karakteri geçemez.');

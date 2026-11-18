@@ -1,0 +1,59 @@
+{
+  "files": [
+    {
+      "path": ".htaccess",
+      "sha256": "6124a332af8f8504e1628fa62b265541be8113ea2fff0ed14a04ffbac4494224",
+      "bytes": 359
+    },
+    {
+      "path": "admin/product_helpers.php",
+      "sha256": "977fab73c8d157ea6fe52a7d96f56ab4b9bf6dec7107d6f1b5c9b924d035f9df",
+      "bytes": 10117
+    },
+    {
+      "path": "api/products.php",
+      "sha256": "189817ce12e065e850d23293b98f90a627e9bc35ca0c73a01fdcbfbf13006ed2",
+      "bytes": 835
+    },
+    {
+      "path": "config/storefront.php",
+      "sha256": "c9859baa4579369fd15dbce540d8504f4371b2fe3b468c9a7590393976ea6298",
+      "bytes": 2878
+    },
+    {
+      "path": "index.html",
+      "sha256": "a6e7f0717edbe205a551341b9cace04d9d88bffc99cc979c46fac8d6e9426714",
+      "bytes": 22174
+    },
+    {
+      "path": "product.php",
+      "sha256": "9cde423061d9f4b388e1e292be86da6297cb1ed520ea6d3a3f53a3e7eb45c54e",
+      "bytes": 6975
+    },
+    {
+      "path": "robots.txt",
+      "sha256": "bf96126738cc1f4cb08b32d137356cabf9d17ba9179347ca79d803b1b5cb6cd9",
+      "bytes": 159
+    },
+    {
+      "path": "script.js",
+      "sha256": "2af031ac7f07c2a4ea4bba8f70766648e324737efc5609ba9e809ded53fca053",
+      "bytes": 54307
+    },
+    {
+      "path": "sitemap.php",
+      "sha256": "64cb176a1706ac702603e30f7ec209fb1df6c66a56f83e5620bcb86f33472b67",
+      "bytes": 1103
+    },
+    {
+      "path": "style.css",
+      "sha256": "76028e3b26c6b88cc67b1f33728124778cff3734f64cbff4961848aa662090c8",
+      "bytes": 54535
+    },
+    {
+      "path": "views/product-modal.php",
+      "sha256": "8b4923d8d84e48d50027a7461bf3113433735e3b4438a3c4c80e40ea6c8ce241",
+      "bytes": 4235
+    }
+  ]
+}

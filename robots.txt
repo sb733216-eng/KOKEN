@@ -2,5 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
+Allow: /api/products.php
+Allow: /api/store-settings.php
 
 Sitemap: https://kokenfindik.com/sitemap.xml

@@ -1,43 +1,14 @@
 <?php
 declare(strict_types=1);
-
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 require_once __DIR__ . '/../config/db.php';
-
+require_once __DIR__ . '/../config/storefront.php';
 try {
-    $stmt = $pdo->query('SELECT p.id, p.title, p.badges, p.weight, p.chip, p.price, p.old_price, p.description, p.ingredients, p.seo_title, p.seo_description, p.image, p.image2, p.image3, p.stock_qty, p.is_new_harvest, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.created_at DESC, p.id DESC');
-    $products = array_map(static function (array $row): array {
-        return [
-            'id' => (string)$row['id'],
-            'title' => $row['title'],
-            'badges' => array_values(array_filter(array_map('trim', preg_split('/\\R/u', (string)($row['badges'] ?? '')) ?: []))),
-            'category' => $row['category_name'] ?: 'Genel',
-            'weight' => $row['weight'] ?? '',
-            'chip' => $row['chip'] ?? '',
-            'price' => (float)$row['price'],
-            'old_price' => $row['old_price'] === null ? 0 : (float)$row['old_price'],
-            'description' => $row['description'] ?? '',
-            'ingredients' => $row['ingredients'] ?? '',
-            'seo_title' => $row['seo_title'] ?? '',
-            'seo_description' => $row['seo_description'] ?? '',
-            'image' => product_image_path($row['image'] ?? null),
-            'image2' => product_image_path($row['image2'] ?? null),
-            'image3' => product_image_path($row['image3'] ?? null),
-            'stockQty' => $row['stock_qty'] === null ? null : (int)$row['stock_qty'],
-            'newHarvest' => (bool)$row['is_new_harvest'],
-        ];
-    }, $stmt->fetchAll());
-    echo json_encode($products, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    $stmt = $pdo->query('SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.created_at DESC, p.id DESC');
+    echo json_encode(array_map('store_product_data', $stmt->fetchAll()), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 } catch (Throwable $exception) {
     error_log('Product catalog API failed: ' . $exception->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'Ürün kataloğu şu anda yüklenemiyor.'], JSON_UNESCAPED_UNICODE);
-}
-
-function product_image_path(?string $image): string
-{
-    if (!$image) return '';
-    if (basename($image) !== $image) return '';
-    return 'uploads/products/' . rawurlencode($image);
 }

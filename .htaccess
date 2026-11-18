@@ -1,9 +1,9 @@
-# XAMPP development path. If the site is deployed at the domain root, change
-# this to: ErrorDocument 404 /404.html
-ErrorDocument 404 /koken-admin/404.html
-
+# Relative rewrites work under /koken/ in XAMPP and at the domain root.
 RewriteEngine On
-# XAMPP project base; use RewriteBase / when deployed at domain root.
-RewriteBase /koken-admin/
-RewriteRule ^sitemap\.xml$ sitemap.php [L]
-RewriteRule ^urun/([a-z0-9]+(?:-[a-z0-9]+)*)/?$ index.html#urunler [R=302,L,NE,QSD]
+RewriteRule ^sitemap\.xml$ sitemap.php [END]
+RewriteRule ^urun/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\.html)?/?$ product.php?slug=$1 [END]
+
+ErrorDocument 404 /404.html
+<If "%{HTTP_HOST} =~ m#^(localhost|127[.]0[.]0[.]1)(:[0-9]+)?$#">
+    ErrorDocument 404 /koken/404.html
+</If>

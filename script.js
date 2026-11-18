@@ -58,6 +58,22 @@ const FALLBACK_PRODUCTS = [
 
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
+  const productPageData = $('#productPageData');
+  const productBootstrap = productPageData ? JSON.parse(productPageData.textContent) : null;
+  const isProductPage = Boolean(productPageData);
+  if (!document.querySelector('base')) {
+    const base = document.createElement('base');
+    base.href = location.origin + location.pathname;
+    document.head.prepend(base);
+  }
+  const originalTitle = productBootstrap?.home?.title || document.title;
+  const originalMetadata = new Map(Array.from(document.head.querySelectorAll('meta[name="description"],meta[property^="og:"],meta[name^="twitter:"],link[rel="canonical"]')).map((element) => {
+    const name = element.tagName === 'LINK' ? 'canonical' : element.getAttribute('name') || element.getAttribute('property');
+    return [element, productBootstrap?.home?.metadata?.[name] ?? element.getAttribute(element.tagName === 'LINK' ? 'href' : 'content')];
+  }));
+  let detailReturnUrl = null;
+  let fullCatalogLoaded = !isProductPage;
+  let catalogRequest = null;
   const money = (n) => Math.round(n * 100) / 100;
   const fmt = (n) => money(n).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL';
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -153,6 +169,21 @@ const FALLBACK_PRODUCTS = [
     }
   }
 
+  function normalizeProductRow(p) {
+    return {
+      id: String(p.id), url: String(p.url || ''), canonical: String(p.canonical_url || ''),
+      cat: slug(p.category), catLabel: String(p.category || 'Genel'), name: String(p.title || ''),
+      badges: Array.isArray(p.badges) ? p.badges.map(String) : [],
+      weight: String(p.weight || ''), chip: String(p.chip || ''),
+      price: Number(p.price) || 0, old: Number(p.old_price) || 0,
+      disc: Number(p.old_price) > Number(p.price) ? Math.round((Number(p.old_price) - Number(p.price)) * 100 / Number(p.old_price)) : 0,
+      img: safeImg(String(p.image || '')), img2: safeImg(String(p.image2 || '')), img3: safeImg(String(p.image3 || '')),
+      stockQty: p.stockQty === null || p.stockQty === undefined ? null : Number(p.stockQty),
+      newHarvest: Boolean(p.newHarvest), desc: String(p.description || ''), ing: String(p.ingredients || ''),
+      seoTitle: String(p.seo_title || ''), seoDescription: String(p.seo_description || '')
+    };
+  }
+
   async function loadCatalog() {
     try {
       const localRes = await fetch('api/products.php', { cache: 'no-store' });
@@ -161,27 +192,7 @@ const FALLBACK_PRODUCTS = [
       if (!Array.isArray(rows)) throw new Error('Ürün API geçersiz yanıt döndürdü');
       catalogUnavailable = false;
       if (!rows.length) return [];
-      return rows.map((p) => ({
-          id: String(p.id),
-          cat: slug(p.category),
-          catLabel: String(p.category || 'Genel'),
-          name: String(p.title || ''),
-          badges: Array.isArray(p.badges) ? p.badges.map(String) : [],
-          weight: String(p.weight || ''),
-          chip: String(p.chip || ''),
-          price: Number(p.price) || 0,
-          old: Number(p.old_price) || 0,
-          disc: Number(p.old_price) > Number(p.price) ? Math.round((Number(p.old_price) - Number(p.price)) * 100 / Number(p.old_price)) : 0,
-          img: safeImg(String(p.image || '')),
-          img2: safeImg(String(p.image2 || '')),
-          img3: safeImg(String(p.image3 || '')),
-          stockQty: p.stockQty === null || p.stockQty === undefined ? null : Number(p.stockQty),
-          newHarvest: Boolean(p.newHarvest),
-          desc: String(p.description || ''),
-          ing: String(p.ingredients || ''),
-          seoTitle: String(p.seo_title || ''),
-          seoDescription: String(p.seo_description || '')
-        })).filter((p) => p.name && p.price >= 0);
+      return rows.map(normalizeProductRow).filter((p) => p.name && p.price >= 0);
     } catch (err) {
       catalogUnavailable = true;
       console.error('MySQL kataloğu okunamadı; satış kontrolleri kapatıldı:', err);
@@ -190,38 +201,74 @@ const FALLBACK_PRODUCTS = [
   }
 
 
-    // SEO: JSON-LD (Product) güncel katalogdan üretilir; LocalBusiness'taki alan adı yer tutucusu yayındaki adrese çevrilir
-  function updateSchema() {
-    const abs = (u) => { try { return new URL(u, location.href).href; } catch (e) { return undefined; } };
-    const prod = $('#ldProducts');
-    if (prod) {
-      prod.textContent = JSON.stringify(PRODUCTS.filter((p) => !p.catalogUnavailable).map((p) => ({
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: label(p),
-        ...(p.seoTitle ? { alternateName: p.seoTitle } : {}),
-        sku: p.id,
-        description: p.seoDescription || p.desc || `${p.name} - Köken Fındık`,
-        image: [p.img, p.img2, p.img3].filter(Boolean).map(abs).filter(Boolean),
-        brand: { '@type': 'Brand', name: 'Köken Fındık' },
-        category: p.catLabel || CAT_NAMES[p.cat] || 'Fındık',
-        offers: {
-          '@type': 'Offer',
-          priceCurrency: 'TRY',
-          ...(p.stockQty === 0 ? {} : { price: String(p.price) }),
-          availability: p.stockQty === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
-          itemCondition: 'https://schema.org/NewCondition',
-          url: abs('index.html#urunler')
-        }
-      })));
-    }
-    const biz = $('#ldBusiness');
-    if (biz && /^https?:$/.test(location.protocol)) biz.textContent = biz.textContent.split('https://www.ALAN-ADINIZ.com').join(location.origin);
+  function productAddress(product) {
+    if (!product.url) return '';
+    try {
+      const url = new URL(product.url, document.baseURI);
+      return url.origin === location.origin ? url.pathname : '';
+    } catch (error) { return ''; }
   }
 
+  function showProductMetadata(product) {
+    document.title = product.seoTitle || `${product.name} | Köken Fındık`;
+    const description = product.seoDescription || product.desc || `${product.name} — Köken Fındık`;
+    const values = {
+      'meta[name="description"]': description,
+      'meta[property="og:title"]': document.title,
+      'meta[property="og:description"]': description,
+      'meta[property="og:url"]': product.canonical,
+      'meta[property="og:type"]': 'product',
+      'meta[name="twitter:title"]': document.title,
+      'meta[name="twitter:description"]': description
+    };
+    for (const [selector, value] of Object.entries(values)) {
+      if (value) document.querySelector(selector)?.setAttribute('content', value);
+    }
+    if (product.canonical) document.querySelector('link[rel="canonical"]')?.setAttribute('href', product.canonical);
+    if (product.img) {
+      const image = new URL(product.img, document.baseURI).href;
+      for (const selector of ['meta[property="og:image"]', 'meta[property="og:image:secure_url"]', 'meta[name="twitter:image"]']) {
+        document.querySelector(selector)?.setAttribute('content', image);
+      }
+    }
+  }
 
-  // Kategori sekmeleri: Sheet'teki benzersiz "Kategori" değerlerinden (trim edilmiş) dinamik oluşur
+  function restorePageMetadata() {
+    document.title = originalTitle;
+    for (const [element, value] of originalMetadata) {
+      const attribute = element.tagName === 'LINK' ? 'href' : 'content';
+      if (value === null) element.removeAttribute(attribute);
+      else element.setAttribute(attribute, value);
+    }
+  }
+
+  // Direct product pages keep their server-rendered schema; home cards link to real product URLs.
+  function updateSchema() {
+    const abs = (url) => { try { return new URL(url, document.baseURI).href; } catch (error) { return undefined; } };
+    const schema = (p) => ({
+      '@context': 'https://schema.org', '@type': 'Product',
+      ...(p.canonical ? { '@id': p.canonical + '#product', url: p.canonical } : {}),
+      name: label(p), sku: p.id,
+      description: p.desc || p.seoDescription || p.name + ' — Köken Fındık',
+      image: [p.img, p.img2, p.img3].filter(Boolean).map(abs).filter(Boolean),
+      brand: { '@type': 'Brand', name: 'Köken Fındık' }, category: p.catLabel || 'Fındık',
+      offers: {
+        '@type': 'Offer', priceCurrency: 'TRY', price: String(p.price),
+        availability: p.stockQty === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+        itemCondition: 'https://schema.org/NewCondition',
+        url: p.canonical || abs('index.html#urunler')
+      }
+    });
+    const element = $('#ldProducts');
+    const selected = $('#detail')?.classList.contains('on') ? byId.get(dId) : null;
+    if (element) element.textContent = JSON.stringify(selected && !selected.catalogUnavailable
+      ? schema(selected) : PRODUCTS.filter((p) => !p.catalogUnavailable).map(schema));
+    const business = $('#ldBusiness');
+    if (business && /^https?:$/.test(location.protocol)) business.textContent = business.textContent.split('https://www.ALAN-ADINIZ.com').join(location.origin);
+  }
+
   function renderFilters() {
+    if (!$('#filters')) return;
     const cats = new Map();
     PRODUCTS.forEach((p) => {
       if (p.cat && !cats.has(p.cat)) cats.set(p.cat, p.catLabel || CAT_NAMES[p.cat] || p.cat);
@@ -231,14 +278,14 @@ const FALLBACK_PRODUCTS = [
       Array.from(cats, ([k, l]) => `<button type="button" data-f="${esc(k)}" aria-pressed="${filter === k}">${esc(l)}</button>`).join('');
   }
 
-  function setProducts(list) {
-    $('#grid').setAttribute('aria-busy', 'false');
+  function setProducts(list, complete = true) {
+    $('#grid')?.setAttribute('aria-busy', 'false');
     list.forEach((product) => { if (!Number.isFinite(product.stockQty)) product.stockQty = null; });
     PRODUCTS = list;
     byId = new Map(list.map((p) => [p.id, p]));
     const before = JSON.stringify(cart);
-    cart = cart.filter((i) => byId.has(i.id)); // artık satışta olmayan ürünleri sepetten düş
-    cart.forEach((i) => { const p = byId.get(i.id); if (p.stockQty !== null) i.qty = Math.min(i.qty, p.stockQty); });
+    if (complete) cart = cart.filter((i) => byId.has(i.id));
+    cart.forEach((i) => { const p = byId.get(i.id); if (p && p.stockQty !== null) i.qty = Math.min(i.qty, p.stockQty); });
     cart = cart.filter((i) => i.qty > 0);
     if (JSON.stringify(cart) !== before) save();
     if (filter !== 'all' && !list.some((p) => p.cat === filter)) filter = 'all';
@@ -286,24 +333,25 @@ const FALLBACK_PRODUCTS = [
 
   function cardHTML(p) {
     const id = esc(p.id);
+    const address = productAddress(p);
     return `
     <article class="card">
-      <div class="card__img" data-view="${id}">
+      <${address ? `a href="${esc(address)}"` : 'div'} class="card__img" data-view="${id}">
         ${p.img ? `<img src="${esc(p.img)}" alt="${esc(label(p))} - Köken Fındık ürünü" width="400" height="300" loading="lazy">` : ''}
                 <div class="card__tags">
           ${p.disc ? `<span class="disc">%${p.disc} İndirim</span>` : ''}
           ${p.stockQty === 0 ? '<span class="stock-tag stock-tag--out">Stokta yok</span>' : (p.stockQty !== null && p.stockQty <= LOW_STOCK_THRESHOLD ? `<span class="stock-tag stock-tag--low">Stok azalıyor · Son ${p.stockQty} adet</span>` : '')}
           ${p.newHarvest ? '<span class="tag tag--new">Yeni Mahsul</span>' : ''}
         </div>
-      </div>
+      </${address ? 'a' : 'div'}>
       <div class="card__body">
         <span class="chip">${esc(p.chip || p.weight || 'Fındık')}</span>
-        <h3>${esc(p.name)}</h3>
+        <h3>${address ? `<a class="product-detail-link" href="${esc(address)}" data-view="${id}">${esc(p.name)}</a>` : esc(p.name)}</h3>
         ${badgeHTML(p, 'badges--sm')}
         <div class="card__bottom">
                    ${priceHTML(p)}
           <div class="card__actions">
-            <button type="button" class="btn btn--ghost" data-view="${id}">İncele</button>
+            ${address ? `<a class="btn btn--ghost" href="${esc(address)}" data-view="${id}">İncele</a>` : `<button type="button" class="btn btn--ghost" data-view="${id}">İncele</button>`}
                         ${addControlHTML(p.id)}
           </div>
         </div>
@@ -312,6 +360,7 @@ const FALLBACK_PRODUCTS = [
   }
 
   function renderGrid() {
+    if (!$('#grid')) return;
     const query = ($('#productSearch')?.value || '').trim().toLocaleLowerCase('tr');
     const list = PRODUCTS.filter((p) => (filter === 'all' || p.cat === filter) && (!query || `${p.name} ${p.catLabel} ${p.desc} ${p.ing} ${p.id}`.toLocaleLowerCase('tr').includes(query)));
     const sort = $('#productSort')?.value || 'newest';
@@ -321,17 +370,17 @@ const FALLBACK_PRODUCTS = [
     $('#grid').innerHTML = list.length ? list.map(cardHTML).join('') : `<p class="grid__msg">${query ? 'Aramanızla eşleşen ürün bulunamadı.' : 'Bu kategoride ürün bulunamadı.'}</p>`;
   }
 
-  $('#filters').addEventListener('click', (e) => {
+  $('#filters')?.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-f]');
     if (!b) return;
     filter = b.dataset.f;
     $$('#filters button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     renderGrid();
   });
-  $('#productSearch').addEventListener('input', renderGrid);
-  $('#productSort').addEventListener('change', renderGrid);
+  $('#productSearch')?.addEventListener('input', renderGrid);
+  $('#productSort')?.addEventListener('change', renderGrid);
 
-       $('#grid').addEventListener('click', (e) => {
+       $('#grid')?.addEventListener('click', (e) => {
     const add = e.target.closest('[data-add]');
     if (add) { addToCart(add.dataset.add, 1, true); showToast(add.dataset.add); return; }
     const inc = e.target.closest('[data-inc]');
@@ -339,7 +388,11 @@ const FALLBACK_PRODUCTS = [
     const dec = e.target.closest('[data-dec]');
     if (dec) { changeCartQty(dec.dataset.dec, -1); return; }
     const v = e.target.closest('[data-view]');
-    if (v) openDetail(v.dataset.view, v);
+    if (v) {
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      if (v.matches('a[href]')) e.preventDefault();
+      openDetail(v.dataset.view, v);
+    }
   });
 
   function flash(btn) {
@@ -581,7 +634,22 @@ const FALLBACK_PRODUCTS = [
     if (fallback) fallback.focus({ preventScroll: true });
   }
 
-  function openDrawer() {
+  async function ensureFullCatalog() {
+    if (fullCatalogLoaded) return;
+    if (catalogRequest) return catalogRequest;
+    catalogRequest = (async () => {
+      const list = await loadCatalog();
+      if (!catalogUnavailable) {
+        fullCatalogLoaded = true;
+        setProducts(list);
+      }
+      syncDetailQty();
+    })().finally(() => { catalogRequest = null; });
+    return catalogRequest;
+  }
+
+  async function openDrawer() {
+    if (isProductPage) await ensureFullCatalog();
     drawer._returnFocusElement = document.activeElement;
     drawer.classList.add('on');
     overlay.classList.add('on');
@@ -612,14 +680,23 @@ const FALLBACK_PRODUCTS = [
     focusLayer(currentDialog());
   }
 
-  function closeModal(modal) {
+  function closeModal(modal, fromHistory = false) {
     if (!modal || !modal.classList.contains('on')) return;
+    if (modal.id === 'detail' && detailReturnUrl && !fromHistory) {
+      history.back();
+      return;
+    }
     const opener = modal._returnFocusElement;
     const context = modal.id === 'detail' ? 'detail' : 'modal';
     modal.classList.remove('on');
     modal.setAttribute('aria-hidden', 'true');
     syncOverlayState();
     restoreFocus(opener, context);
+    if (modal.id === 'detail') {
+      detailReturnUrl = null;
+      restorePageMetadata();
+      updateSchema();
+    }
   }
 
   $('#openCart').addEventListener('click', openDrawer);
@@ -628,7 +705,7 @@ const FALLBACK_PRODUCTS = [
   overlay.addEventListener('click', closeDrawer);
   document.addEventListener('click', (event) => {
     const closeButton = event.target.closest('[data-close]');
-    if (closeButton) closeModal(closeButton.closest('.modal'));
+    if (closeButton) { event.preventDefault(); closeModal(closeButton.closest('.modal')); }
   });
   document.addEventListener('focusin', (event) => {
     const layer = currentDialog();
@@ -649,7 +726,7 @@ const FALLBACK_PRODUCTS = [
     if (event.key !== 'Escape') return;
     if (openModals.length) closeModal(openModals[openModals.length - 1]);
     else if (drawer.classList.contains('on')) closeDrawer();
-  });  window.addEventListener('storage', (e) => { if (e.key === KEY) { cart = load(); render(); } });
+  });  window.addEventListener('storage', async (e) => { if (e.key === KEY) { cart = load(); if (isProductPage && cart.some((item) => !byId.has(item.id))) await ensureFullCatalog(); render(); } });
 
 
   /* ---------- Rozetler ve SSS ---------- */
@@ -685,7 +762,7 @@ const FALLBACK_PRODUCTS = [
   });
 
     // Ana sayfa SSS akordiyonu
-  $('#homeFaq').addEventListener('click', (e) => {
+  $('#homeFaq')?.addEventListener('click', (e) => {
     const b = e.target.closest('.faq__q');
     if (!b) return;
     const item = b.parentElement;
@@ -750,7 +827,7 @@ const FALLBACK_PRODUCTS = [
     selectThumb(ts[(i + 1) % ts.length]);
   });
 
-  function openDetail(id, opener = document.activeElement) {
+  function openDetail(id, opener = document.activeElement, fromHistory = false) {
     const p = byId.get(id);
     if (!p) return;
     dId = id; dQty = 1;
@@ -785,7 +862,6 @@ const FALLBACK_PRODUCTS = [
 
     $('#dName').textContent = p.name;
     if (p.catalogUnavailable || catalogUnavailable) $('#dPrice').textContent = 'Fiyat bilgisi alınamıyor';
-    else if (p.stockQty === 0) $('#dPrice').textContent = 'Stokta yok';
     else $('#dPrice').innerHTML = priceInner(p);
     $('#dPrice').classList.toggle('price--sale', !!p.disc);
 
@@ -799,6 +875,17 @@ const FALLBACK_PRODUCTS = [
     $('.detail').scrollTop = 0;
     syncDetailQty();
     openModal('detail', opener);
+    const address = productAddress(p);
+    if (address) {
+      if (!fromHistory) {
+        detailReturnUrl = location.pathname + location.search + location.hash;
+        history.pushState({ ...(history.state || {}), kokenProduct: p.id, kokenReturn: detailReturnUrl }, '', address);
+      } else {
+        detailReturnUrl = history.state?.kokenReturn || 'index.html#urunler';
+      }
+      showProductMetadata(p);
+    }
+    updateSchema();
   }
 
   $('#dMinus').addEventListener('click', () => { dQty = Math.max(1, dQty - 1); syncDetailQty(); });
@@ -901,8 +988,28 @@ const FALLBACK_PRODUCTS = [
     if (!items.length) return;
     save();
     window.location.assign('siparis-tamamla.html');
-  });render();
-  Promise.all([loadStoreSettings(), loadCatalog()]).then(([, products]) => {
+  });
+  window.addEventListener('popstate', (event) => {
+    const productId = event.state?.kokenProduct;
+    if (productId && byId.has(productId)) openDetail(productId, document.activeElement, true);
+    else closeModal($('#detail'), true);
+  });
+  render();
+  if (isProductPage) {
+    const product = normalizeProductRow(productBootstrap.product);
+    dId = product.id;
+    fullCatalogLoaded = true;
+    setProducts(productBootstrap.catalog.map(normalizeProductRow));
+    const homeUrl = productBootstrap.home.path + '#urunler';
+    if (history.state?.kokenProduct !== product.id || !history.state?.kokenReturn) {
+      history.replaceState({ kokenHome: true }, '', homeUrl);
+      history.pushState({ kokenProduct: product.id, kokenReturn: homeUrl }, '', productAddress(product));
+    }
+    const section = $('#urunler');
+    if (section) window.scrollTo({ top: Math.max(0, section.getBoundingClientRect().top + window.scrollY - ($('.site-top')?.offsetHeight || 0)), behavior: 'instant' });
+    openDetail(product.id, null, true);
+    loadStoreSettings().then(render);
+  } else Promise.all([loadStoreSettings(), loadCatalog()]).then(([, products]) => {
     setProducts(products);
     const addId = new URLSearchParams(location.search).get('add_to_cart');
     if (addId && byId.has(addId)) {
@@ -913,8 +1020,8 @@ const FALLBACK_PRODUCTS = [
     } else {
       const viewId = new URLSearchParams(location.search).get('view_product');
       if (viewId && byId.has(viewId)) {
-        openDetail(viewId);
         history.replaceState(null, '', location.pathname + '#urunler');
+        openDetail(viewId);
       }
     }
   });

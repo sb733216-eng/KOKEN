@@ -1,12 +1,22 @@
 <?php
 declare(strict_types=1);
 
-require dirname(__DIR__, 2) . '/private/koken-db.php';
-
 $httpHostHeader = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
 $parsedHost = parse_url('http://' . $httpHostHeader, PHP_URL_HOST);
 $httpHost = strtolower(is_string($parsedHost) ? $parsedHost : '');
 $isLoopbackHost = in_array($httpHost, ['localhost', '127.0.0.1', '::1'], true);
+
+// Keep XAMPP credentials separate from the production configuration.
+$localDatabaseConfig = dirname(__DIR__, 3) . '/private/koken-db.local.php';
+$isLocalRequest = $isLoopbackHost
+    && in_array((string)($_SERVER['REMOTE_ADDR'] ?? ''), ['127.0.0.1', '::1'], true);
+$isLocalCli = PHP_SAPI === 'cli' && getenv('APP_ENV') === 'local';
+if (($isLocalRequest || $isLocalCli) && is_file($localDatabaseConfig)) {
+    require $localDatabaseConfig;
+} else {
+    require dirname(__DIR__, 2) . '/private/koken-db.php';
+}
+
 $configuredEnvironment = getenv('APP_ENV');
 $appEnvironment = strtolower(trim($configuredEnvironment !== false && $configuredEnvironment !== ''
     ? $configuredEnvironment
