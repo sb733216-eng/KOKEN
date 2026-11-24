@@ -28,6 +28,7 @@ unset($_SESSION['flash']);
       <a class="<?= $current === 'stock' ? 'active' : '' ?>" href="<?= e(app_url('admin/stock/index.php')) ?>"><span>↕</span> Stok & talepler</a>
       <a class="<?= $current === 'categories' ? 'active' : '' ?>" href="<?= e(app_url('admin/categories/index.php')) ?>"><span>▤</span> Kategoriler</a>
       <a class="<?= $current === 'settings' ? 'active' : '' ?>" href="<?= e(app_url('admin/settings.php')) ?>"><span>⚙</span> Mağaza ayarları</a>
+      <a class="<?= $current === 'price-editor' ? 'active' : '' ?>" href="<?= e(app_url('admin/fiyat-editoru.php')) ?>"><span>₺</span> Fiyat Editörü</a>
       <a class="<?= $current === 'backup' ? 'active' : '' ?>" href="<?= e(app_url('admin/backup.php')) ?>"><span>⇩</span> Yedekleme</a>
     </nav>
     <div class="sidebar-bottom">
