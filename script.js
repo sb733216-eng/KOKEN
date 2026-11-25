@@ -256,7 +256,7 @@ const FALLBACK_PRODUCTS = [
         '@type': 'Offer', priceCurrency: 'TRY', price: String(p.price),
         availability: p.stockQty === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
         itemCondition: 'https://schema.org/NewCondition',
-        url: p.canonical || abs('index.html#urunler')
+        url: p.canonical || abs('./#urunler')
       }
     });
     const element = $('#ldProducts');
@@ -880,7 +880,7 @@ const FALLBACK_PRODUCTS = [
         detailReturnUrl = location.pathname + location.search + location.hash;
         history.pushState({ ...(history.state || {}), kokenProduct: p.id, kokenReturn: detailReturnUrl }, '', address);
       } else {
-        detailReturnUrl = history.state?.kokenReturn || 'index.html#urunler';
+        detailReturnUrl = history.state?.kokenReturn || './#urunler';
       }
       showProductMetadata(p);
     }
