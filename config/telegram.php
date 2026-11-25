@@ -6,15 +6,16 @@ require_once __DIR__ . '/order_helpers.php';
 function order_telegram_config(): array
 {
     $local = [];
+    $documentRoot = (string)($_SERVER['DOCUMENT_ROOT'] ?? '');
+    $root = $documentRoot !== '' ? realpath($documentRoot) : false;
+    $privateParent = $root !== false ? dirname($root) : dirname(__DIR__, 3);
     $customPath = trim((string)getenv('KOKEN_TELEGRAM_CONFIG'));
-    $path = $customPath !== '' ? $customPath : dirname(__DIR__, 3) . '/private/koken-telegram.json';
+    $path = $customPath !== '' ? $customPath : $privateParent . '/private/koken-telegram.json';
     if ($customPath !== '' && !is_file($path)) {
         throw new RuntimeException('private_config_missing');
     }
     if (is_file($path)) {
         $resolved = realpath($path);
-        $documentRoot = (string)($_SERVER['DOCUMENT_ROOT'] ?? '');
-        $root = $documentRoot !== '' ? realpath($documentRoot) : false;
         $normalizedPath = strtolower(str_replace('\\', '/', (string)$resolved));
         $normalizedRoot = rtrim(strtolower(str_replace('\\', '/', (string)$root)), '/');
         if ($resolved === false || ($normalizedRoot !== '' && str_starts_with($normalizedPath, $normalizedRoot . '/'))) {
