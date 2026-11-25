@@ -48,16 +48,53 @@ function order_telegram_payload(
     array $config,
     int $orderId,
     string $orderNumber,
+    array $items,
     int $totalCents,
+    int $shippingCents,
     string $payment,
     string $paymentStatus
 ): array {
-    $total = number_format($totalCents / 100, 2, ',', '.') . ' TL';
+    $money = static fn (float $amount): string => number_format($amount, 2, ',', '.') . ' TL';
+    $lines = ["<b>Yeni sipariş #{$orderNumber}</b>", '', '<b>Ürünler</b>'];
+
+    // Reserve room for every product and the totals within Telegram's message limit.
+    $titleBytes = intdiv(2100, max(1, count($items)));
+    foreach ($items as $item) {
+        $title = trim((string)$item['title']);
+        $title = preg_replace('/\s+/u', ' ', $title) ?? $title;
+        if (strlen($title) > $titleBytes) {
+            $title = substr($title, 0, $titleBytes - strlen('…'));
+            while (preg_match('//u', $title) !== 1) {
+                $title = substr($title, 0, -1);
+            }
+            $title = rtrim($title) . '…';
+        }
+        $title = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $quantity = (int)$item['quantity'];
+        $lineTotal = $money((float)$item['lineTotal']);
+        $lines[] = "• {$quantity} × {$title} — {$lineTotal}";
+    }
+
+    $subtotal = $money(($totalCents - $shippingCents) / 100);
+    $shipping = $shippingCents === 0 ? 'Ücretsiz' : $money($shippingCents / 100);
+    $total = $money($totalCents / 100);
     $paymentLabel = order_payment_method_label($payment);
     $statusLabel = order_payment_status_label($paymentStatus);
+    array_push(
+        $lines,
+        '',
+        "Ara toplam: {$subtotal}",
+        "Kargo: {$shipping}",
+        "<b>Genel toplam: {$total}</b>",
+        '',
+        "Ödeme yöntemi: {$paymentLabel}",
+        "Ödeme durumu: {$statusLabel}"
+    );
+
     $payload = [
         'chat_id' => $config['chat_id'],
-        'text' => "Yeni sipariş #{$orderNumber}\n{$total} · {$paymentLabel}\n{$statusLabel}",
+        'text' => implode("\n", $lines),
+        'parse_mode' => 'HTML',
     ];
 
     $url = $config['admin_orders_url'];
@@ -80,7 +117,9 @@ function order_telegram_payload(
 function notify_telegram_new_order(
     int $orderId,
     string $orderNumber,
+    array $items,
     int $totalCents,
+    int $shippingCents,
     string $payment,
     string $paymentStatus
 ): void {
@@ -100,7 +139,7 @@ function notify_telegram_new_order(
         }
 
         $body = json_encode(
-            order_telegram_payload($config, $orderId, $orderNumber, $totalCents, $payment, $paymentStatus),
+            order_telegram_payload($config, $orderId, $orderNumber, $items, $totalCents, $shippingCents, $payment, $paymentStatus),
             JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
         );
         $request = curl_init('https://api.telegram.org/bot' . $config['token'] . '/sendMessage');
