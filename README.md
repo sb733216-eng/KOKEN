@@ -60,3 +60,11 @@ E-posta için PHP `mail()` kullanılmaz. PHPMailer Composer bağımlılığıdı
 Yeni sipariş veritabanı transaction'ı başarıyla commit edildikten sonra e-posta kuyruğa alınır ve gönderim denenir. SMTP yapılandırması eksik/hatalı olsa bile sipariş ve stok kaydı geri alınmaz. Müşteri onay ekranında WhatsApp bildirimi gerektiğini görür; kısa kodlu mesajı kullanıcı WhatsApp'ta kendisi gönderir. E-posta, satıcı onayının yerine geçmez. Admin ekranı başarısız bildirimleri gösterir ve aynı kuyruk kaydını yeniden dener; `sent` durumu yalnızca SMTP sunucusunun mesajı kabul ettiğini gösterir, gelen kutusuna teslim garantisi değildir. Gerçek sipariş veya müşteriye test e-postası oluşturmayın; yapılandırmayı göndermeden önce yalnızca admin ekranındaki durumdan doğrulayın.
 
 Sepette “Siparişi Tamamla” seçildiğinde teslimat, zorunlu e-posta, ödeme seçimi ve sipariş kaydı `siparis-tamamla.html` üzerindeki tek checkout akışında yürür. Sipariş kaydı başarılı olduğunda müşteri `siparis-tamamlandi.html` onay ekranına yönlendirilir. Bu ekranda kısa sipariş numarası gösterilir ve takip bağlantısına numara otomatik taşınır.
+
+## Telegram sipariş bildirimi
+
+Yeni sipariş veritabanına kaydedildikten sonra satıcıya Telegram bildirimi gönderilir. Sunucuda PHP cURL eklentisi ve api.telegram.org adresine HTTPS erişimi gerekir. Telegram ayarı eksikse veya gönderim başarısız olursa sipariş kaydı tamamlanır.
+
+- XAMPP denemesinde eşleştirme betiği ayarları C:\xampp\private\koken-telegram.json dosyasına kaydeder.
+- Hostingde PHP ortamına TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID değerlerini ekleyin. Siparişi doğrudan açan düğme için TELEGRAM_ADMIN_ORDERS_URL değeri olarak canlı HTTPS Siparişler sayfasının adresini kullanın.
+- Özel JSON dosyası kullanıyorsanız dosyayı sunucudaki tüm herkese açık web dizinlerinin dışında saklayın ve KOKEN_TELEGRAM_CONFIG değişkenine sunucudaki tam dosya yolunu yazın. JSON dosyasındaki anahtarlar token, chat_id ve isteğe bağlı admin_orders_url alanlarıdır. Bot anahtarını site dosyalarına veya Git deposuna eklemeyin.

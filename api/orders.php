@@ -12,6 +12,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/rate_limit.php';
 require_once __DIR__ . '/../config/mailer.php';
 require_once __DIR__ . '/../config/order_helpers.php';
+require_once __DIR__ . '/../config/telegram.php';
 
 function order_json(array $payload, int $status = 200): never
 {
@@ -141,6 +142,7 @@ try {
     $mailSubject = order_mail_notification_subject('preparing', (string)$orderNumber, 'order_received');
     $notificationId = queue_order_email_notification($pdo,$orderId,'order_received',hash('sha256','order_received:' . $requestKey),$email,$mailSubject);
     $pdo->commit();
+    notify_telegram_new_order($orderId, $orderNumber, $totalCents, $payment, $paymentStatus);
     $mailResult = dispatch_order_email_notification($pdo,$notificationId);
     order_json(['ok' => true, 'orderNumber' => $orderNumber, 'orderDate' => $orderDate, 'items' => $responseItems, 'subtotal' => $subtotalCents / 100, 'shippingFee' => $feeCents / 100, 'total' => $totalCents / 100, 'paymentMethod' => $payment, 'paymentStatus' => $paymentStatus, 'emailStatus' => $mailResult['status'], 'emailIssue' => $mailResult['error'] ?? '']);
 } catch (DomainException $exception) {
