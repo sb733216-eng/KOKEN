@@ -66,5 +66,5 @@ Sepette “Siparişi Tamamla” seçildiğinde teslimat, zorunlu e-posta, ödeme
 Yeni sipariş veritabanına kaydedildikten sonra satıcıya Telegram bildirimi gönderilir. Sunucuda PHP cURL eklentisi ve api.telegram.org adresine HTTPS erişimi gerekir. Telegram ayarı eksikse veya gönderim başarısız olursa sipariş kaydı tamamlanır.
 
 - XAMPP denemesinde eşleştirme betiği ayarları C:\xampp\private\koken-telegram.json dosyasına kaydeder.
-- Hostingde PHP ortamına TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID değerlerini ekleyin. Siparişi doğrudan açan düğme için TELEGRAM_ADMIN_ORDERS_URL değeri olarak canlı HTTPS Siparişler sayfasının adresini kullanın.
+- Hostingde PHP ortamına TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID değerlerini ekleyin. Birden fazla alıcı için sohbet kimliklerini virgülle ayırın. Aynı biçim özel JSON dosyasındaki chat_id alanında da kullanılır. Siparişi doğrudan açan düğme için TELEGRAM_ADMIN_ORDERS_URL değeri olarak canlı HTTPS Siparişler sayfasının adresini kullanın.
 - Özel JSON dosyası kullanıyorsanız dosyayı sunucudaki tüm herkese açık web dizinlerinin dışında saklayın ve KOKEN_TELEGRAM_CONFIG değişkenine sunucudaki tam dosya yolunu yazın. JSON dosyasındaki anahtarlar token, chat_id ve isteğe bağlı admin_orders_url alanlarıdır. Bot anahtarını site dosyalarına veya Git deposuna eklemeyin.

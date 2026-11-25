@@ -92,7 +92,6 @@ function order_telegram_payload(
     );
 
     $payload = [
-        'chat_id' => $config['chat_id'],
         'text' => implode("\n", $lines),
         'parse_mode' => 'HTML',
     ];
@@ -128,8 +127,7 @@ function notify_telegram_new_order(
         if ($config['token'] === '' && $config['chat_id'] === '') {
             return;
         }
-        if (!preg_match('/^\d+:[A-Za-z0-9_-]+$/D', $config['token'])
-            || !preg_match('/^-?[1-9]\d*$/D', $config['chat_id'])) {
+        if (!preg_match('/^\d+:[A-Za-z0-9_-]+$/D', $config['token']) || $config['chat_id'] === '') {
             error_log('Order Telegram notification not sent; reason=invalid_config');
             return;
         }
@@ -138,11 +136,25 @@ function notify_telegram_new_order(
             return;
         }
 
-        $body = json_encode(
-            order_telegram_payload($config, $orderId, $orderNumber, $items, $totalCents, $shippingCents, $payment, $paymentStatus),
-            JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-        );
-        $request = curl_init('https://api.telegram.org/bot' . $config['token'] . '/sendMessage');
+        $chatIds = array_unique(array_map('trim', explode(',', $config['chat_id'])));
+        $payload = order_telegram_payload($config, $orderId, $orderNumber, $items, $totalCents, $shippingCents, $payment, $paymentStatus);
+        foreach ($chatIds as $chatId) {
+            if (!preg_match('/^-?[1-9]\d*$/D', $chatId)) {
+                error_log('Order Telegram notification not sent; reason=invalid_chat_id');
+                continue;
+            }
+            send_telegram_order_message($config['token'], ['chat_id' => $chatId] + $payload, $orderNumber);
+        }
+    } catch (Throwable) {
+        error_log('Order Telegram notification failed; order=' . $orderNumber . '; reason=internal_error');
+    }
+}
+
+function send_telegram_order_message(string $token, array $payload, string $orderNumber): void
+{
+    try {
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $request = curl_init('https://api.telegram.org/bot' . $token . '/sendMessage');
         if ($request === false) {
             throw new RuntimeException('curl_init_failed');
         }

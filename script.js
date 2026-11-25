@@ -488,8 +488,10 @@ const FALLBACK_PRODUCTS = [
             <span>${l.qty}</span>
             <button type="button" data-act="inc" data-id="${esc(l.id)}" aria-label="Arttır">+</button>
           </div>
-          <strong>${fmt(l.p.price * l.qty)}</strong>
-          <button type="button" class="del" data-act="del" data-id="${esc(l.id)}">Sil</button>
+          <div class="cart-item__actions">
+            <strong>${fmt(l.p.price * l.qty)}</strong>
+            <button type="button" class="del" data-act="del" data-id="${esc(l.id)}">Sil</button>
+          </div>
         </div>
       </li>`).join('') : '<li class="empty">Sepetiniz şu an boş.</li>';
 

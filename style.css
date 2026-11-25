@@ -86,6 +86,7 @@ button{font-family:inherit;cursor:pointer}
 .cart-item strong{display:block;font-size:.95rem;line-height:1.35}
 .cart-item small{color:var(--brown);font-weight:600}
 .side{display:flex;flex-direction:column;align-items:flex-end;gap:.4rem}
+.cart-item__actions{display:flex;align-items:center;justify-content:flex-end;gap:.25rem;white-space:nowrap}
 .qty{display:inline-flex;align-items:center;gap:.5rem;background:var(--white);border:1px solid var(--line);border-radius:999px;padding:.2rem}
 .qty button{width:28px;height:28px;border:0;border-radius:50%;background:var(--green-s);color:var(--green);font-size:1.1rem;font-weight:700;line-height:1}
 .qty button:hover{background:var(--green);color:var(--white)}
