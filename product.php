@@ -82,7 +82,7 @@ try {
         $replace('~<meta\b(?=[^>]*' . $kind . '="' . preg_quote($name, '~') . '")[^>]*>~i', '<meta ' . $kind . '="' . $name . '" content="' . store_escape($value) . '">');
     }
     $html = preg_replace('~<meta\b[^>]*property="og:image:(?:width|height|type)"[^>]*>\s*~i', '', $html);
-    $html = preg_replace('~<link\b[^>]*rel="preload"[^>]*href="hero\.jpg"[^>]*>\s*~i', '', $html);
+    $html = preg_replace('~<link\b[^>]*\sdata-hero-preload\b[^>]*>\s*~i', '', $html);
     $replace('~<script\b[^>]*id="ldProducts"[^>]*>.*?</script>~is', '<script type="application/ld+json" id="ldProducts">' . json_encode($schema, $jsonFlags) . '</script>');
     ob_start();
     require __DIR__ . '/views/product-modal.php';

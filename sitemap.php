@@ -11,7 +11,7 @@ try {
 }
 header('Content-Type: application/xml; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
-$paths = ['', 'hakkimizda.html', 'uretim-tesisimiz.html', 'teslimat-ve-kargo.html', 'iptal-ve-iade.html', 'mesafeli-satis-sozlesmesi.html', 'kvkk.html', 'cerez-politikasi.html'];
+$paths = ['', 'hakkimizda.html', 'uretim-tesisimiz.html', 'teslimat-ve-kargo.html', 'iptal-ve-iade.html', 'mesafeli-satis-sozlesmesi.html', 'kvkk.html', 'cerez-politikasi.html', 'gizlilik-politikasi.html'];
 foreach ($slugs as $slug) $paths[] = 'urun/' . rawurlencode((string)$slug) . '.html';
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

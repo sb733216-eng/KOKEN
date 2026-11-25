@@ -1047,6 +1047,7 @@ const FALLBACK_PRODUCTS = [
 
   function showSlide(index) {
     active = (index + slides.length) % slides.length;
+    if (active !== 0) slides[0].removeAttribute('data-initial-slide');
     track.style.transform = `translateX(-${active * 100}%)`;
     slides.forEach((slide, i) => { slide.setAttribute('aria-hidden', String(i !== active)); slide.inert = i !== active; });
     dots.forEach((dot, i) => dot.setAttribute('aria-current', String(i === active)));

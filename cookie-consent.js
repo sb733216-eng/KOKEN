@@ -1,101 +1,79 @@
-(() => {
-  'use strict';
+/* Çerez Onay Banner'ı, Turksem.com Çerez Politikası Oluşturucu.
+   Bu dosyayı head içinde tüm istatistik ve pazarlama script'lerinden önce yükleyin.
+   Rıza gerektiren script'leri type="text/plain" data-cookie-consent="analytics" ile erteleyin. */
+(function () {
+  var policyUrl = new URL("cerez-politikasi.html", document.currentScript.src).href;
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { window.dataLayer.push(arguments); }
+  // Google Consent Mode v2: karar gelene kadar dört sinyal de "denied".
+  gtag("consent", "default", { ad_storage: "denied", analytics_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", wait_for_update: 500 });
+  try { localStorage.removeItem("cookiesAccepted"); } catch (e) {}
 
-  const STORAGE_KEY = 'koken_cookie_consent_v1';
-  // GA4 web stream Measurement ID (format: G-XXXXXXXXXX). Keep empty until configured.
-  const GA_MEASUREMENT_ID = '';
-  let memoryConsent = null;
+  function unlockScripts() {
+    var blocked = document.querySelectorAll('script[type="text/plain"][data-cookie-consent]');
+    for (var i = 0; i < blocked.length; i++) {
+      var s = document.createElement("script");
+      if (blocked[i].src) { s.src = blocked[i].src; } else { s.textContent = blocked[i].textContent; }
+      blocked[i].parentNode.replaceChild(s, blocked[i]);
+    }
+    if (typeof window.cookieConsentGranted === "function") window.cookieConsentGranted();
+  }
 
-  const readConsent = () => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (error) { return memoryConsent; }
+  function activate() {
+    gtag("consent", "update", { ad_storage: "granted", analytics_storage: "granted", ad_user_data: "granted", ad_personalization: "granted" });
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", unlockScripts);
+    } else {
+      unlockScripts();
+    }
+  }
+
+  // Kararı silip banner'ı yeniden göstererek ziyaretçinin tercihini değiştirmesini sağlar.
+  window.cookieConsentReset = function () {
+    try { localStorage.removeItem("cookieConsent"); } catch (e) {}
+    location.reload();
   };
 
-  const loadAnalytics = () => {
-    if (!GA_MEASUREMENT_ID || !/^G-[A-Z0-9]+$/i.test(GA_MEASUREMENT_ID)) return;
-    if (document.querySelector('script[data-koken-ga]')) return;
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function () { window.dataLayer.push(arguments); };
-    window.gtag('js', new Date());
-    window.gtag('config', GA_MEASUREMENT_ID);
-    const script = document.createElement('script');
-    script.async = true;
-    script.dataset.kokenGa = 'true';
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_MEASUREMENT_ID)}`;
-    document.head.appendChild(script);
-  };
+  var stored = null;
+  try { stored = localStorage.getItem("cookieConsent"); } catch (e) {}
+  if (stored === "accepted") activate();
 
-  const bannerMarkup = `
-    <section class="cookie-consent" id="cookieConsent" role="region" aria-labelledby="cookieTitle" hidden>
-      <div class="cookie-consent__copy">
-        <h2 id="cookieTitle">Çerez tercihleri</h2>
-        <p>Sepet ve tercihlerin çalışması için gerekli yerel depolama kullanılır. İsteğe bağlı analiz araçları yalnızca onayınızla etkinleşir. <a href="cerez-politikasi.html">Çerez politikası</a></p>
-        <div class="cookie-consent__settings" id="cookieSettings" hidden>
-          <label><input type="checkbox" checked disabled> Gerekli depolama (her zaman açık)</label>
-          <label><input type="checkbox" id="cookieAnalytics"> İsteğe bağlı analiz</label>
-        </div>
-      </div>
-      <div class="cookie-consent__actions">
-        <button class="btn btn--ghost" type="button" id="cookieReject">Yalnızca gerekli</button>
-        <button class="btn btn--ghost" type="button" id="cookieCustomize" aria-expanded="false" aria-controls="cookieSettings">Tercihleri seç</button>
-        <button class="btn btn--primary" type="button" id="cookieAccept">Tümünü kabul et</button>
-        <button class="btn btn--primary" type="button" id="cookieSave" hidden>Tercihleri kaydet</button>
-      </div>
-    </section>`;
+  function mount() {
+    var footer = document.querySelector(".footer__copy");
+    if (footer) {
+      var preferences = document.createElement("button");
+      preferences.type = "button";
+      preferences.className = "cookie-settings-trigger";
+      preferences.textContent = "Çerez tercihlerini değiştir";
+      preferences.addEventListener("click", window.cookieConsentReset);
+      footer.appendChild(preferences);
+    }
 
-  document.body.insertAdjacentHTML('beforeend', bannerMarkup);
-  const banner = document.getElementById('cookieConsent');
-  const settings = document.getElementById('cookieSettings');
-  const analytics = document.getElementById('cookieAnalytics');
-  const customize = document.getElementById('cookieCustomize');
-  const accept = document.getElementById('cookieAccept');
-  const reject = document.getElementById('cookieReject');
-  const saveButton = document.getElementById('cookieSave');
+    if (stored === "accepted" || stored === "rejected") return;
 
-  const saveConsent = (analyticsAllowed) => {
-    const consent = { necessary: true, analytics: Boolean(analyticsAllowed), savedAt: new Date().toISOString() };
-    memoryConsent = consent;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(consent)); } catch (error) { /* Current-page choice still applies. */ }
-    banner.hidden = true;
-    if (consent.analytics) loadAnalytics();
-  };
+    var banner = document.createElement("div");
+    banner.id = "cookie-banner";
+    banner.innerHTML =
+      '<p>Sitemizde zorunlu çerezler her zaman etkindir; analitik ve pazarlama çerezleri yalnızca onayınızla kullanılır. ' +
+      '<a href="' + policyUrl + '" target="_blank" rel="noopener">Çerez Politikası</a></p>' +
+      '<button class="btn btn--primary" type="button" id="cookie-accept">Tümünü Kabul Et</button>' +
+      '<button class="btn btn--ghost" type="button" id="cookie-reject">Reddet</button>';
+    document.body.appendChild(banner);
 
-  const openPreferences = () => {
-    banner.hidden = false;
-    settings.hidden = false;
-    customize.hidden = true;
-    accept.hidden = true;
-    saveButton.hidden = false;
-    reject.hidden = false;
-    const consent = readConsent();
-    analytics.checked = Boolean(consent && consent.analytics);
-    customize.setAttribute('aria-expanded', 'true');
-    analytics.focus();
-  };
+    function decide(value) {
+      try { localStorage.setItem("cookieConsent", value); } catch (e) {}
+      banner.remove();
+      if (value === "accepted") activate();
+    }
 
-  customize.addEventListener('click', () => {
-    settings.hidden = false;
-    customize.hidden = true;
-    accept.hidden = true;
-    saveButton.hidden = false;
-    customize.setAttribute('aria-expanded', 'true');
-    analytics.focus();
-  });
-  accept.addEventListener('click', () => saveConsent(true));
-  reject.addEventListener('click', () => saveConsent(false));
-  saveButton.addEventListener('click', () => saveConsent(analytics.checked));
+    document.getElementById("cookie-accept").addEventListener("click", function () { decide("accepted"); });
+    document.getElementById("cookie-reject").addEventListener("click", function () { decide("rejected"); });
+  }
 
-  const settingsTrigger = document.createElement('button');
-  settingsTrigger.type = 'button';
-  settingsTrigger.className = 'cookie-settings-trigger';
-  settingsTrigger.textContent = 'Çerez tercihleri';
-  settingsTrigger.addEventListener('click', openPreferences);
-  const footerCopy = document.querySelector('.footer__copy');
-  (footerCopy || document.body).appendChild(settingsTrigger);
-
-  const existingConsent = readConsent();
-  if (!existingConsent) banner.hidden = false;
-  else if (existingConsent.analytics) loadAnalytics();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mount);
+  } else {
+    mount();
+  }
 })();
+/* Çerez Onay Banner'ı Bitiş */
