@@ -364,8 +364,8 @@ body:has(.drawer.on) .wa-island{right:calc(min(420px,100%) + 1.2rem)}
 .announce.free .announce__bar span{background:#7ee08f}
 
 /* ===== Sepet geri bildirimi (3 sn) ===== */
-.toast{position:fixed;left:50%;bottom:24px;z-index:1100;width:min(440px,calc(100% - 2rem));display:grid;gap:.8rem;padding:1rem 1.1rem 1.15rem;background:var(--white);border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px rgba(20,60,30,.28);overflow:hidden;visibility:hidden;opacity:0;transform:translate(-50%,16px);transition:opacity .25s,transform .25s,visibility .25s}
-.toast.on{visibility:visible;opacity:1;transform:translate(-50%,0)}
+.toast{position:fixed;left:50%;bottom:24px;z-index:1100;width:min(440px,calc(100% - 2rem));display:grid;gap:.8rem;padding:1rem 1.1rem 1.15rem;background:var(--white);border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px rgba(20,60,30,.28);overflow:hidden;visibility:hidden;opacity:0;transform:translate(-50%,28px) scale(.96);transition:opacity 220ms ease,transform 420ms cubic-bezier(.22,1.25,.36,1),visibility 420ms}
+.toast.on{visibility:visible;opacity:1;transform:translate(-50%,0) scale(1)}
 .toast__msg{display:flex;align-items:center;gap:.6rem;font-weight:600;font-size:.95rem}
 .toast__ic{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--green);color:var(--white);font-size:.85rem}
 .toast__actions{display:grid;grid-template-columns:1.2fr 1fr;gap:.5rem}

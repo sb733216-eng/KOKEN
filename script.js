@@ -421,16 +421,6 @@ const FALLBACK_PRODUCTS = [
     if (!quiet) openDrawer();
   }
 
-  function showToastMessage(message) {
-    $('#toastMsg').textContent = message;
-    const tm = toast.querySelector('.toast__timer');
-    tm.style.animation = 'none'; void tm.offsetWidth; tm.style.animation = '';
-    toast.classList.add('on');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(hideToast, 3000);
-  }
-
-
   // Adet 1 iken azaltılırsa ürün sepetten silinir (kart butonu "Sepete Ekle"ye döner)
   function changeCartQty(id, delta) {
     const it = cart.find((i) => i.id === id);
@@ -446,16 +436,25 @@ const FALLBACK_PRODUCTS = [
   const toast = $('#addToast');
   let toastTimer = null;
 
+  function showToastMessage(message) {
+    $('#toastMsg').textContent = message;
+
+    // Bildirim zaten açıksa giriş geçişini ve süre çubuğunu yeniden başlat.
+    toast.style.transition = 'none';
+    toast.classList.remove('on');
+    void toast.querySelector('.toast__timer').offsetWidth;
+    toast.style.removeProperty('transition');
+    toast.classList.add('on');
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 3000);
+  }
+
   function showToast(id) {
     const p = byId.get(id);
     if (!p) return;
     const q = cartQty(id);
-    $('#toastMsg').textContent = q > 1 ? `${p.name}: sepette ${q} adet` : `${p.name} sepete eklendi`;
-    const tm = toast.querySelector('.toast__timer');
-    tm.style.animation = 'none'; void tm.offsetWidth; tm.style.animation = ''; // süre çubuğunu baştan başlat
-    toast.classList.add('on');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(hideToast, 3000);
+    showToastMessage(q > 1 ? `${p.name}: sepette ${q} adet` : `${p.name} sepete eklendi`);
   }
   function hideToast() { toast.classList.remove('on'); clearTimeout(toastTimer); }
 

@@ -31,9 +31,8 @@
 <h1 id="successTitle">Siparişiniz kaydedildi</h1>
 <p>Siparişiniz kaydedildi ve hazırlık sürecine alındı. Güncel durumunu aşağıdaki bağlantıdan takip edebilirsiniz.</p>
 <p id="orderCode" class="order-success__code" aria-live="polite"></p>
-<div class="order-success__notice"><strong>Siparişiniz hakkında WhatsApp üzerinden bize ulaşabilirsiniz.</strong><br>Buton, sipariş numaranızı içeren bir mesaj taslağı açar. Mesajı WhatsApp uygulamasında gönderebilirsiniz.</div>
+<div class="order-success__notice"><strong id="orderPaymentNotice">Siparişiniz hakkında WhatsApp üzerinden bize ulaşabilirsiniz.</strong><br><span id="cashOnDeliveryNotice" hidden>Sipariş tutarını teslimat sırasında ödeyebilirsiniz.<br></span>Buton, sipariş numaranızı içeren bir mesaj taslağı açar. Mesajı WhatsApp uygulamasında gönderebilirsiniz.</div>
 <p id="emailMessage" class="order-success__status" role="status" aria-live="polite"></p>
-<p id="sampleIbanNotice" class="order-success__notice" hidden>Havale/EFT seçtiyseniz, gösterilen IBAN test amaçlı örnektir; gerçek ödeme göndermeyin.</p>
 <div class="order-success__actions">
 <a id="whatsappOrder" class="btn order-success__whatsapp" href="#whatsappOrder" target="_blank" rel="noopener noreferrer" hidden>WhatsApp ile sipariş numaramı bildir</a>
 <a id="trackLink" class="btn btn--primary" href="siparis-takibi.html">Siparişimi takip et</a>
@@ -54,10 +53,13 @@
   const emailMessage = document.getElementById('emailMessage');
   const whatsapp = document.getElementById('whatsappOrder');
   orderCode.textContent = validCode ? 'Sipariş numarası: #' + order : 'Sipariş numaranız sipariş kaydı sırasında gösterildi.';
-  document.getElementById('sampleIbanNotice').hidden = payment !== 'iban';
+  document.getElementById('cashOnDeliveryNotice').hidden = payment !== 'kapida';
+  if (payment === 'iban') {
+    document.getElementById('orderPaymentNotice').textContent = 'Ödeme açıklamasına sipariş numaranızı yazın. Ödemenizi yaptıktan sonra dekontunuzu WhatsApp üzerinden bize iletebilirsiniz.';
+  }
   if (validCode) {
     document.getElementById('trackLink').href = 'siparis-takibi.html?order=' + encodeURIComponent(order);
-    const message = 'Merhaba, #' + order + ' numaralı siparişimi kaydettim. Siparişim hakkında bilgi almak istiyorum.';
+    const message = 'Merhaba, #' + order + ' numaralı siparişimi kaydettim.';
     whatsapp.href = 'https://api.whatsapp.com/send?phone=905395982499&text=' + encodeURIComponent(message);
     whatsapp.hidden = false;
   }

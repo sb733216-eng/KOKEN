@@ -129,13 +129,34 @@
     const items = lines();
     const summary = $('#coList');
     summary.replaceChildren();
-    items.forEach((line) => {
+    items.forEach(({ product, qty }) => {
       const row = document.createElement('li');
-      const product = document.createElement('span');
+
+      if (product.image) {
+        const image = document.createElement('img');
+        image.className = 'checkout-summary__photo';
+        image.alt = '';
+        image.width = 66;
+        image.height = 66;
+        image.addEventListener('error', () => image.remove(), { once: true });
+        image.src = product.image;
+        row.append(image);
+      }
+
+      const details = document.createElement('div');
+      details.className = 'checkout-summary__product';
+      const title = document.createElement('span');
+      title.className = 'checkout-summary__name';
+      title.textContent = product.weight ? product.title + ' (' + product.weight + ')' : product.title;
+      const quantity = document.createElement('small');
+      quantity.className = 'checkout-summary__quantity';
+      quantity.textContent = 'Adet: ' + qty;
+      details.append(title, quantity);
+
       const total = document.createElement('span');
-      product.textContent = (line.product.weight ? line.product.title + ' (' + line.product.weight + ')' : line.product.title) + ' × ' + line.qty;
-      total.textContent = fmt(line.product.price * line.qty);
-      row.append(product, total);
+      total.className = 'checkout-summary__price';
+      total.textContent = fmt(product.price * qty);
+      row.append(details, total);
       summary.append(row);
     });
     const totals = calculateTotals();
@@ -173,6 +194,7 @@
         id: String(product.id),
         title: String(product.title || ''),
         weight: String(product.weight || ''),
+        image: String(product.image || product.image2 || product.image3 || ''),
         price: Number(product.price) || 0,
         stockQty: product.stockQty === null || product.stockQty === undefined ? null : Number(product.stockQty)
       }]));
@@ -205,13 +227,49 @@
   fillDistricts('');
 
   const phoneInput = form.elements.phone;
-  phoneInput.addEventListener('input', () => { phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 11); });
-  phoneInput.addEventListener('paste', (event) => {
-    event.preventDefault();
-    let digits = ((event.clipboardData || window.clipboardData).getData('text') || '').replace(/\D/g, '');
-    if (digits.length === 12 && digits.startsWith('90')) digits = '0' + digits.slice(2);
-    phoneInput.value = digits.slice(0, 11);
+  const phoneSlots = $('#phoneSlots');
+
+  function updatePhoneSlots() {
+    const filled = Math.min(phoneInput.value.length, phoneInput.maxLength);
+    phoneSlots.textContent = '\u00a0'.repeat(filled) + '_'.repeat(phoneInput.maxLength - filled);
+  }
+
+  function sanitizePhoneInput() {
+    const value = phoneInput.value;
+    const digits = value.replace(/\D/g, '').slice(0, phoneInput.maxLength);
+    if (digits !== value) {
+      const caret = Math.min(digits.length, value.slice(0, phoneInput.selectionStart).replace(/\D/g, '').length);
+      phoneInput.value = digits;
+      phoneInput.setSelectionRange(caret, caret);
+    }
+    updatePhoneSlots();
+  }
+
+  phoneInput.addEventListener('beforeinput', (event) => {
+    if (event.inputType === 'insertText' && event.data && /\D/.test(event.data)) event.preventDefault();
   });
+  phoneInput.addEventListener('input', sanitizePhoneInput);
+  phoneInput.addEventListener('change', sanitizePhoneInput);
+  phoneInput.addEventListener('paste', (event) => {
+    const clipboard = event.clipboardData || window.clipboardData;
+    if (!clipboard) return;
+    event.preventDefault();
+
+    const { value, maxLength, selectionStart, selectionEnd } = phoneInput;
+    const selectedLength = selectionEnd - selectionStart;
+    let digits = clipboard.getData('text').replace(/\D/g, '');
+    if (selectedLength === value.length && digits.length === 12 && digits.startsWith('90')) {
+      digits = '0' + digits.slice(2);
+    }
+
+    const available = Math.max(0, maxLength - value.length + selectedLength);
+    const insertion = digits.slice(0, available);
+    if (!insertion) return;
+    phoneInput.setRangeText(insertion, selectionStart, selectionEnd, 'end');
+    updatePhoneSlots();
+  });
+  sanitizePhoneInput();
+  window.addEventListener('pageshow', sanitizePhoneInput);
 
   $('#ibanBank').textContent = IBAN_INFO.bank;
   $('#ibanHolder').textContent = IBAN_INFO.holder;
